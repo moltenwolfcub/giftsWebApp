@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>Gifts Web App</title>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+
+<body>
+	<h1>Your Wishlist</h1>
+	<hr>
+	{{if .Items}}
+	<ul>
+		{{range .Items}}
+		<li>{{.}}</li>
+		{{end}}
+	</ul>
+	{{else}}
+	No items added yet
+	{{end}}
+</body>
+
+</html>
