@@ -12,17 +12,16 @@
 	<hr>
 	{{if .Items}}
 	<ul>
-		<form>
-			{{range .Items}}
-			<li>
+		{{range .Items}}
+		<li>
+			<form>
 				{{.Name}}
-				<Button type="submit" formmethod="get" formaction="/wishlist/edit_item" name="editID"
-					value="{{.Id}}">Edit</Button>
-				<Button type="submit" formmethod="post" formaction="/wishlist/delete_item" name="deleteID"
-					value="{{.Id}}">Remove</Button>
-			</li>
-			{{end}}
-		</form>
+				<input type="hidden" name="id" value="{{.Id}}">
+				<Button type="submit" formmethod="get" formaction="/wishlist/edit_item">Edit</Button>
+				<Button type="submit" formmethod="post" formaction="/wishlist/delete_item">Remove</Button>
+			</form>
+		</li>
+		{{end}}
 	</ul>
 	{{else}}
 	No items added yet

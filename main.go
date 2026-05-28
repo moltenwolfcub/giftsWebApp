@@ -116,7 +116,7 @@ func handleAddWishlistItemSubmit(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleEditWishlistItem(w http.ResponseWriter, r *http.Request) {
-	editID := r.FormValue("editID")
+	editID := r.FormValue("id")
 	var item WishlistItem
 	var _nil0 string
 	err := db.QueryRow("SELECT * FROM wishlist_items WHERE id=?", editID).Scan(&item.Id, &_nil0, &item.Name)
@@ -146,7 +146,7 @@ func handleEditWishlistItemSubmit(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDeleteWishlistItem(w http.ResponseWriter, r *http.Request) {
-	deleteID := r.FormValue("deleteID")
+	deleteID := r.FormValue("id")
 
 	db.Exec("DELETE FROM wishlist_items WHERE id=?", deleteID)
 
