@@ -18,18 +18,46 @@ type Wishlist struct {
 	Items []string
 }
 
+func LoadWishlist() (*Wishlist, error) {
+	wl := Wishlist{}
+	wl.Items = []string{}
+
+	var listId int
+	err := db.QueryRow("SELECT * FROM wishlists LIMIT 1").Scan(&listId)
+	if err != nil {
+		return nil, err
+	}
+
+	items, err := db.Query("SELECT * FROM wishlist_items WHERE wishlist_id=?", listId)
+	if err != nil {
+		return nil, err
+	}
+	defer items.Close()
+
+	for items.Next() {
+		var name string
+		var nil1, nil2 int
+		items.Scan(&nil1, &nil2, &name)
+		wl.Items = append(wl.Items, name)
+	}
+
+	return &wl, nil
+}
+
 var dummyWishlist = Wishlist{[]string{"Chocolate", "Sweets", "Guitar"}}
 
 var db *sql.DB
 
 func main() {
-	db, err := sql.Open("sqlite", filepath.Join(databasePath, "dev.db"))
+	var err error
+	db, err = sql.Open("sqlite", filepath.Join(databasePath, "dev.db"))
 	if err != nil {
 		log.Fatal(err)
 	}
 	if err = db.Ping(); err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
 	log.Println("Connected to database")
 
 	http.HandleFunc("/", handleRoot)
@@ -50,5 +78,11 @@ func handleWishlist(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	t.Execute(w, dummyWishlist)
+	wishlist, err := LoadWishlist()
+	if err != nil {
+		log.Print("Error loading wishlist from database:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	t.Execute(w, wishlist)
 }
