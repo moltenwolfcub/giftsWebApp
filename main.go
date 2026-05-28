@@ -44,8 +44,6 @@ func LoadWishlist() (*Wishlist, error) {
 	return &wl, nil
 }
 
-var dummyWishlist = Wishlist{[]string{"Chocolate", "Sweets", "Guitar"}}
-
 var db *sql.DB
 
 func main() {
@@ -62,6 +60,8 @@ func main() {
 
 	http.HandleFunc("/", handleRoot)
 	http.HandleFunc("/wishlist/", handleWishlist)
+	http.HandleFunc("/wishlist/add_item", handleAddWishlistItem)
+	http.HandleFunc("POST /wishlist/add_item/submit", handleAddWishlistItemSubmit)
 	log.Fatal(http.ListenAndServe(":8040", nil))
 }
 
@@ -85,4 +85,24 @@ func handleWishlist(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t.Execute(w, wishlist)
+}
+
+func handleAddWishlistItem(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles(
+		filepath.Join(templatesPath, "wishlist_add.html"),
+	)
+	if err != nil {
+		log.Print("Error parsing template:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	t.Execute(w, nil)
+}
+
+func handleAddWishlistItemSubmit(w http.ResponseWriter, r *http.Request) {
+	name := r.FormValue("itemName")
+
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, ?);", name)
+
+	http.Redirect(w, r, "/wishlist", http.StatusFound)
 }
