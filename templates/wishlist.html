@@ -12,9 +12,15 @@
 	<hr>
 	{{if .Items}}
 	<ul>
-		{{range .Items}}
-		<li>{{.}}</li>
-		{{end}}
+		<form>
+			{{range .Items}}
+			<li>
+				<p>{{.Name}}</p>
+				<Button type="submit" formmethod="post" formaction="/wishlist/delete_item" name="deleteID"
+					value="{{.Id}}">Remove</Button>
+			</li>
+			{{end}}
+		</form>
 	</ul>
 	{{else}}
 	No items added yet
