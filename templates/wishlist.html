@@ -15,7 +15,9 @@
 		<form>
 			{{range .Items}}
 			<li>
-				<p>{{.Name}}</p>
+				{{.Name}}
+				<Button type="submit" formmethod="get" formaction="/wishlist/edit_item" name="editID"
+					value="{{.Id}}">Edit</Button>
 				<Button type="submit" formmethod="post" formaction="/wishlist/delete_item" name="deleteID"
 					value="{{.Id}}">Remove</Button>
 			</li>
