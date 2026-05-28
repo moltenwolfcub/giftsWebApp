@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -74,7 +73,15 @@ func main() {
 }
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Home\nHello World")
+	t, err := template.ParseFiles(
+		filepath.Join(templatesPath, "index.html"),
+	)
+	if err != nil {
+		log.Print("Error parsing template:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	t.Execute(w, nil)
 }
 
 func handleWishlist(w http.ResponseWriter, r *http.Request) {
