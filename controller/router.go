@@ -23,6 +23,10 @@ func BuildRouter(database *sql.DB) http.Handler {
 	mux.HandleFunc("POST /wishlist/edit_item/{id}", wishlistController.editItemSubmit)
 	mux.HandleFunc("POST /wishlist/delete_item/{id}", wishlistController.deleteItem)
 
+	authController := &authController{db: database}
+	mux.HandleFunc("GET /auth/register/", authController.register)
+	mux.HandleFunc("POST /auth/register/", authController.registerSubmit)
+
 	return mux
 }
 

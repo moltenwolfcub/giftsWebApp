@@ -1,0 +1,19 @@
+{{define "content"}}
+
+<h1>Sign Up</h1>
+<hr>
+<form action="/auth/register/" method="post">
+	<label for="username">Username:</label>
+	<input type="text" name="username" placeholder="Enter username">
+	<br>
+	<label for="password">Password:</label>
+	<input type="password" name="password" placeholder="Enter password">
+	<br>
+	<label for="confirm-password">Confirm Password:</label>
+	<input type="password" name="confirm-password" placeholder="Enter password">
+	<br><br>
+	<button type="submit">Sign Up</button>
+	<button type="button" onclick="document.location='/'">Cancel</button>
+</form>
+
+{{end}}
