@@ -3,10 +3,10 @@ package main
 import (
 	"database/sql"
 	"log"
-	"net/http"
 	"path/filepath"
 
-	"github.com/moltenwolfcub/giftsWebApp/controller"
+	"github.com/moltenwolfcub/giftsWebApp/app"
+	"github.com/moltenwolfcub/giftsWebApp/config"
 
 	_ "modernc.org/sqlite"
 )
@@ -16,6 +16,8 @@ const databasePath = "database"
 var db *sql.DB
 
 func main() {
+	cfg := config.New()
+
 	var err error
 	db, err = sql.Open("sqlite", filepath.Join(databasePath, "dev.db"))
 	if err != nil {
@@ -27,6 +29,6 @@ func main() {
 	defer db.Close()
 	log.Println("Connected to database")
 
-	controller.BuildRouter(db)
-	log.Fatal(http.ListenAndServe(":8040", nil))
+	app := app.NewAppServer(db, cfg)
+	app.Run()
 }

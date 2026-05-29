@@ -13,4 +13,10 @@ The Go representations of the necessary data structures. Should be entirely deco
 All the html templates, css and javascript necessary for the web front end.
 
 ### Controller
-Responsible for actually serving the website along with managing and routing http requests - either serving html or handling database changes and redirects
+Responsible for managing and routing http requests - either serving html or handling database changes and redirects
+
+### Config
+Project config and global settings
+
+### App
+The entrypoint that manages dependency injection and coordination within the whole project
