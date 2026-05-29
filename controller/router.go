@@ -18,9 +18,9 @@ func BuildRouter(database *sql.DB) http.Handler {
 	wishlistController := &wishlistController{db: database}
 	mux.HandleFunc("GET /wishlist/", wishlistController.index)
 	mux.HandleFunc("GET /wishlist/add_item", wishlistController.addItem)
-	mux.HandleFunc("POST /wishlist/add_item/submit", wishlistController.addItemSubmit)
+	mux.HandleFunc("POST /wishlist/add_item", wishlistController.addItemSubmit)
 	mux.HandleFunc("GET /wishlist/edit_item", wishlistController.editItem)
-	mux.HandleFunc("POST /wishlist/edit_item/submit", wishlistController.editItemSubmit)
+	mux.HandleFunc("POST /wishlist/edit_item", wishlistController.editItemSubmit)
 	mux.HandleFunc("POST /wishlist/delete_item", wishlistController.deleteItem)
 
 	return mux
