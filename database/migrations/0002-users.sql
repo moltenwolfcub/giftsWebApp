@@ -1,0 +1,8 @@
+CREATE TABLE users (
+	id 			INTEGER PRIMARY KEY AUTOINCREMENT,
+
+	username 	TEXT UNIQUE NOT NULL,
+	password	TEXT NOT NULL,
+	salt 		TEXT NOT NULL
+);
+ALTER TABLE wishlists ADD user_id INT NOT NULL REFERENCES users (id);
