@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"text/template"
 
 	"github.com/moltenwolfcub/giftsWebApp/models"
@@ -56,11 +57,14 @@ func (c *wishlistController) addItemSubmit(w http.ResponseWriter, r *http.Reques
 
 func (c *wishlistController) editItem(w http.ResponseWriter, r *http.Request) {
 	editID := r.PathValue("id")
-	var item models.WishlistItem
-	var _nil0 string
-	err := c.db.QueryRow("SELECT * FROM wishlist_items WHERE id=?", editID).Scan(&item.Id, &_nil0, &item.Name)
+	editIDint, err := strconv.Atoi(editID)
 	if err != nil {
-		log.Print("Error finding item to edit:", err)
+		log.Print("Non-integer id given to editItem handler:", err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+	}
+	item, err := models.LoadWishlistItem(c.db, editIDint)
+	if err != nil {
+		log.Print("Error loading wishlist item to edit:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
