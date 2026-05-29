@@ -55,7 +55,7 @@ func (c *wishlistController) addItemSubmit(w http.ResponseWriter, r *http.Reques
 }
 
 func (c *wishlistController) editItem(w http.ResponseWriter, r *http.Request) {
-	editID := r.FormValue("id")
+	editID := r.PathValue("id")
 	var item models.WishlistItem
 	var _nil0 string
 	err := c.db.QueryRow("SELECT * FROM wishlist_items WHERE id=?", editID).Scan(&item.Id, &_nil0, &item.Name)
@@ -78,7 +78,7 @@ func (c *wishlistController) editItem(w http.ResponseWriter, r *http.Request) {
 
 func (c *wishlistController) editItemSubmit(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("itemName")
-	editID := r.FormValue("editID")
+	editID := r.PathValue("id")
 
 	c.db.Exec("UPDATE wishlist_items SET item_name=? WHERE id=?", name, editID)
 
@@ -86,7 +86,7 @@ func (c *wishlistController) editItemSubmit(w http.ResponseWriter, r *http.Reque
 }
 
 func (c *wishlistController) deleteItem(w http.ResponseWriter, r *http.Request) {
-	deleteID := r.FormValue("id")
+	deleteID := r.PathValue("id")
 
 	c.db.Exec("DELETE FROM wishlist_items WHERE id=?", deleteID)
 

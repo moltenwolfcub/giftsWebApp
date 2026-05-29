@@ -2,10 +2,9 @@
 
 <h1>Edit item on your wishlist</h1>
 <hr>
-<form action="/wishlist/edit_item" method="post">
+<form action="/wishlist/edit_item/{{.Id}}" method="post">
 	<label for="itemName">Item Name:</label>
 	<input type="text" id="itemName" name="itemName" value="{{.Name}}">
-	<input type="hidden" name="editID" value="{{.Id}}">
 	<br><br>
 	<button type="submit">Save Changes</button>
 	<button type="button" onclick="document.location='/wishlist/'">Cancel</button>

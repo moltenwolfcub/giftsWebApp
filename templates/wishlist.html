@@ -8,9 +8,8 @@
 	<li>
 		<form>
 			{{.Name}}
-			<input type="hidden" name="id" value="{{.Id}}">
-			<Button type="submit" formmethod="get" formaction="/wishlist/edit_item">Edit</Button>
-			<Button type="submit" formmethod="post" formaction="/wishlist/delete_item">Remove</Button>
+			<Button type="submit" formmethod="get" formaction="/wishlist/edit_item/{{.Id}}">Edit</Button>
+			<Button type="submit" formmethod="post" formaction="/wishlist/delete_item/{{.Id}}">Remove</Button>
 		</form>
 	</li>
 	{{end}}
