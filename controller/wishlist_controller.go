@@ -4,9 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"path/filepath"
 	"strconv"
-	"text/template"
 
 	"github.com/moltenwolfcub/giftsWebApp/models"
 )
@@ -16,35 +14,17 @@ type wishlistController struct {
 }
 
 func (c *wishlistController) index(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles(
-		filepath.Join(templatesPath, "_base.html"),
-		filepath.Join(templatesPath, "wishlist.html"),
-	)
-	if err != nil {
-		log.Print("Error parsing template:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
 	wishlist, err := models.LoadWishlist(c.db)
 	if err != nil {
 		log.Print("Error loading wishlist from database:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	t.Execute(w, wishlist)
+	serveTemplate(w, "wishlist.html", wishlist)
 }
 
 func (c *wishlistController) addItem(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles(
-		filepath.Join(templatesPath, "_base.html"),
-		filepath.Join(templatesPath, "wishlist_add.html"),
-	)
-	if err != nil {
-		log.Print("Error parsing template:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	t.Execute(w, nil)
+	serveTemplate(w, "wishlist_add.html", nil)
 }
 
 func (c *wishlistController) addItemSubmit(w http.ResponseWriter, r *http.Request) {
@@ -68,16 +48,7 @@ func (c *wishlistController) editItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	t, err := template.ParseFiles(
-		filepath.Join(templatesPath, "_base.html"),
-		filepath.Join(templatesPath, "wishlist_edit.html"),
-	)
-	if err != nil {
-		log.Print("Error parsing template:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	t.Execute(w, item)
+	serveTemplate(w, "wishlist_edit.html", item)
 }
 
 func (c *wishlistController) editItemSubmit(w http.ResponseWriter, r *http.Request) {
