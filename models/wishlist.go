@@ -11,9 +11,8 @@ type WishlistItem struct {
 }
 
 func LoadWishlistItem(db *sql.DB, id int) (*WishlistItem, error) {
-	var wishlistId int
 	var name string
-	err := db.QueryRow("SELECT * FROM wishlist_items WHERE id=?", id).Scan(&id, &wishlistId, &name)
+	err := db.QueryRow("SELECT item_name FROM wishlist_items WHERE id=?", id).Scan(&name)
 	if err != nil {
 		log.Printf("Error finding wishlist item[%d]: %v", id, err)
 		return nil, err
@@ -35,13 +34,13 @@ func LoadWishlist(db *sql.DB) (*Wishlist, error) {
 	wl.Items = []WishlistItem{}
 
 	var listId int
-	err := db.QueryRow("SELECT * FROM wishlists LIMIT 1").Scan(&listId)
+	err := db.QueryRow("SELECT id FROM wishlists LIMIT 1").Scan(&listId)
 	if err != nil {
 		log.Printf("Error finding wishlist: %v", err)
 		return nil, err
 	}
 
-	items, err := db.Query("SELECT * FROM wishlist_items WHERE wishlist_id=?", listId)
+	items, err := db.Query("SELECT id, item_name FROM wishlist_items WHERE wishlist_id=?", listId)
 	if err != nil {
 		log.Printf("Error finding wishlist items: %v", err)
 		return nil, err
@@ -50,8 +49,8 @@ func LoadWishlist(db *sql.DB) (*Wishlist, error) {
 
 	for items.Next() {
 		var name string
-		var id, nil2 int
-		items.Scan(&id, &nil2, &name)
+		var id int
+		items.Scan(&id, &name)
 		wl.Items = append(wl.Items, WishlistItem{Id: id, Name: name})
 	}
 
