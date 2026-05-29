@@ -1,33 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
+{{define "content"}}
 
-<head>
-	<title>Gifts Web App</title>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-</head>
-
-<body>
-	<h1>Your Wishlist</h1>
-	<hr>
-	{{if .Items}}
-	<ul>
-		{{range .Items}}
-		<li>
-			<form>
-				{{.Name}}
-				<input type="hidden" name="id" value="{{.Id}}">
-				<Button type="submit" formmethod="get" formaction="/wishlist/edit_item">Edit</Button>
-				<Button type="submit" formmethod="post" formaction="/wishlist/delete_item">Remove</Button>
-			</form>
-		</li>
-		{{end}}
-	</ul>
-	{{else}}
-	No items added yet
+<h1>Your Wishlist</h1>
+<hr>
+{{if .Items}}
+<ul>
+	{{range .Items}}
+	<li>
+		<form>
+			{{.Name}}
+			<input type="hidden" name="id" value="{{.Id}}">
+			<Button type="submit" formmethod="get" formaction="/wishlist/edit_item">Edit</Button>
+			<Button type="submit" formmethod="post" formaction="/wishlist/delete_item">Remove</Button>
+		</form>
+	</li>
 	{{end}}
-	<br>
-	<a href="/wishlist/add_item">Add Item</a>
-</body>
+</ul>
+{{else}}
+No items added yet
+{{end}}
+<br>
+<a href="/wishlist/add_item">Add Item</a>
 
-</html>
+{{end}}

@@ -74,6 +74,7 @@ func main() {
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
 	t, err := template.ParseFiles(
+		filepath.Join(templatesPath, "_base.html"),
 		filepath.Join(templatesPath, "index.html"),
 	)
 	if err != nil {
@@ -86,6 +87,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 
 func handleWishlist(w http.ResponseWriter, r *http.Request) {
 	t, err := template.ParseFiles(
+		filepath.Join(templatesPath, "_base.html"),
 		filepath.Join(templatesPath, "wishlist.html"),
 	)
 	if err != nil {
@@ -104,6 +106,7 @@ func handleWishlist(w http.ResponseWriter, r *http.Request) {
 
 func handleAddWishlistItem(w http.ResponseWriter, r *http.Request) {
 	t, err := template.ParseFiles(
+		filepath.Join(templatesPath, "_base.html"),
 		filepath.Join(templatesPath, "wishlist_add.html"),
 	)
 	if err != nil {
@@ -133,6 +136,7 @@ func handleEditWishlistItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t, err := template.ParseFiles(
+		filepath.Join(templatesPath, "_base.html"),
 		filepath.Join(templatesPath, "wishlist_edit.html"),
 	)
 	if err != nil {
