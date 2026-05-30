@@ -31,7 +31,12 @@ func (c *wishlistController) addItem(w http.ResponseWriter, r *http.Request) {
 func (c *wishlistController) addItemSubmit(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("itemName")
 
-	c.db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, ?);", name)
+	_, err := c.db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, ?);", name)
+	if err != nil {
+		log.Printf("Error adding wishlist item to database: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	http.Redirect(w, r, "/wishlist", http.StatusFound)
 }
@@ -58,7 +63,12 @@ func (c *wishlistController) editItemSubmit(w http.ResponseWriter, r *http.Reque
 	name := r.FormValue("itemName")
 	editID := r.PathValue("id")
 
-	c.db.Exec("UPDATE wishlist_items SET item_name=? WHERE id=?", name, editID)
+	_, err := c.db.Exec("UPDATE wishlist_items SET item_name=? WHERE id=?", name, editID)
+	if err != nil {
+		log.Printf("Error editing wishlist item in database: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	http.Redirect(w, r, "/wishlist", http.StatusFound)
 }
@@ -66,7 +76,12 @@ func (c *wishlistController) editItemSubmit(w http.ResponseWriter, r *http.Reque
 func (c *wishlistController) deleteItem(w http.ResponseWriter, r *http.Request) {
 	deleteID := r.PathValue("id")
 
-	c.db.Exec("DELETE FROM wishlist_items WHERE id=?", deleteID)
+	_, err := c.db.Exec("DELETE FROM wishlist_items WHERE id=?", deleteID)
+	if err != nil {
+		log.Printf("Error eleting wishlist item from database: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	http.Redirect(w, r, "/wishlist", http.StatusFound)
 }

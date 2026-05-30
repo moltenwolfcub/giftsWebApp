@@ -53,7 +53,12 @@ func (c *authController) registerSubmit(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	c.db.Exec("INSERT INTO users (username, password, salt) VALUES (?, ?, ?);", username, hash, salt)
+	_, err = c.db.Exec("INSERT INTO users (username, password, salt) VALUES (?, ?, ?);", username, hash, salt)
+	if err != nil {
+		log.Printf("Error registering user to database: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	//TODO: sign the user in after registering them
 
 	//TODO: redirect user to their wishlist once its user protected
