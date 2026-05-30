@@ -2,6 +2,7 @@ package controller
 
 import (
 	"database/sql"
+	"encoding/hex"
 	"log"
 	"net/http"
 
@@ -41,6 +42,16 @@ func (c *authController) registerSubmit(w http.ResponseWriter, r *http.Request) 
 		http.Redirect(w, r, "/auth/register", http.StatusFound)
 		return
 	}
+	//TODO: ensure password isn't too long
+	//TODO: maybe force passwords to be kinda secure
+
+	hash, salt, err := models.HashPassword(password)
+	if err != nil {
+		log.Printf("Error hashing password: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	log.Print(hex.EncodeToString(hash), " ", hex.EncodeToString(salt))
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
