@@ -26,7 +26,7 @@ func LoadUser(db *sql.DB, id int) (*User, error) {
 	return &u, nil
 }
 
-func UsernameTaken(db *sql.DB, username string) (bool, error) {
+func UsernameExists(db *sql.DB, username string) (bool, error) {
 	var numFound int
 	err := db.QueryRow("SELECT COUNT(*) FROM users WHERE username=?", username).Scan(&numFound)
 	if err != nil {

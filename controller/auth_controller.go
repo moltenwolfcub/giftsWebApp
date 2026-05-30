@@ -20,7 +20,7 @@ func (c *authController) register(w http.ResponseWriter, r *http.Request) {
 
 func (c *authController) registerSubmit(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
-	userTaken, err := models.UsernameTaken(c.db, username)
+	userTaken, err := models.UsernameExists(c.db, username)
 	if err != nil {
 		log.Printf("Error checking for duplicate username on register: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -70,5 +70,20 @@ func (c *authController) login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *authController) loginSubmit(w http.ResponseWriter, r *http.Request) {
+	username := r.FormValue("username")
+
+	userExists, err := models.UsernameExists(c.db, username)
+	if err != nil {
+		log.Printf("Error looking up username: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !userExists {
+		// TODO: add already submitted form data along with
+		// hint complaining about invalid credentials (NOT INVALID USERNAME)
+		http.Redirect(w, r, "/auth/login", http.StatusFound)
+		return
+	}
+
 	http.Redirect(w, r, "/", http.StatusFound)
 }
