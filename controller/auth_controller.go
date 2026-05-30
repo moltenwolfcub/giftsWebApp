@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"crypto/subtle"
 	"database/sql"
 	"log"
 	"net/http"
@@ -79,6 +80,19 @@ func (c *authController) loginSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !userExists {
+		// TODO: add already submitted form data along with
+		// hint complaining about invalid credentials (NOT INVALID USERNAME)
+		http.Redirect(w, r, "/auth/login", http.StatusFound)
+		return
+	}
+
+	var dbPassword, salt []byte
+	c.db.QueryRow("SELECT password, salt FROM users WHERE username=?", username).Scan(&dbPassword, &salt)
+
+	password := r.FormValue("password")
+	hash := models.HasPasswordWithSalt(password, c.cfg, salt)
+
+	if subtle.ConstantTimeCompare(dbPassword, hash) != 1 {
 		// TODO: add already submitted form data along with
 		// hint complaining about invalid credentials (NOT INVALID USERNAME)
 		http.Redirect(w, r, "/auth/login", http.StatusFound)

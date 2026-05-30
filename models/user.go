@@ -48,9 +48,14 @@ func HashPassword(password string, cfg *config.Config) (hash, salt []byte, err e
 		return nil, nil, err
 	}
 
-	hash = argon2.IDKey(append([]byte(password), cfg.Pepper...), salt, cfg.ArgonIterations, cfg.ArgonMem, cfg.ArgonThreads, cfg.HashLength)
+	hash = HasPasswordWithSalt(password, cfg, salt)
 
 	return hash, salt, nil
+}
+
+func HasPasswordWithSalt(password string, cfg *config.Config, salt []byte) []byte {
+	hash := argon2.IDKey(append([]byte(password), cfg.Pepper...), salt, cfg.ArgonIterations, cfg.ArgonMem, cfg.ArgonThreads, cfg.HashLength)
+	return hash
 }
 
 func genSalt(length uint) ([]byte, error) {
