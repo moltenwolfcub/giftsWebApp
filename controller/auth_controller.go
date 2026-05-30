@@ -2,7 +2,6 @@ package controller
 
 import (
 	"database/sql"
-	"encoding/hex"
 	"log"
 	"net/http"
 
@@ -53,7 +52,10 @@ func (c *authController) registerSubmit(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.Print(hex.EncodeToString(hash), " ", hex.EncodeToString(salt))
 
+	c.db.Exec("INSERT INTO users (username, password, salt) VALUES (?, ?, ?);", username, hash, salt)
+	//TODO: sign the user in after registering them
+
+	//TODO: redirect user to their wishlist once its user protected
 	http.Redirect(w, r, "/", http.StatusFound)
 }
