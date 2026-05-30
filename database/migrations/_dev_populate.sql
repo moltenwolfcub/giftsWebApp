@@ -1,10 +1,8 @@
 INSERT INTO users (username, password, salt) VALUES (
 	"dev",
-	"nil",
-	"devSalt"
+	"9265886dd625b0332b04a6633f6131a55b7176023cf148b2fcea67946d2e68e3",
+	"7bf2fd255f5e9e09ebb2d818c98f45ff"
 );
-UPDATE users SET password=X'3a4d722d5f2f1908bbc96eeeafcacebb4cc53187698f75d07de9fd144adc9681'
-WHERE username="dev";
 
 INSERT INTO wishlists (user_id) VALUES (1);
 INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, "game");

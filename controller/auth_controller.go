@@ -3,6 +3,7 @@ package controller
 import (
 	"crypto/subtle"
 	"database/sql"
+	"encoding/hex"
 	"log"
 	"net/http"
 
@@ -54,7 +55,10 @@ func (c *authController) registerSubmit(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	_, err = c.db.Exec("INSERT INTO users (username, password, salt) VALUES (?, ?, ?);", username, hash, salt)
+	hexHash := hex.EncodeToString(hash)
+	hexSalt := hex.EncodeToString(salt)
+
+	_, err = c.db.Exec("INSERT INTO users (username, password, salt) VALUES (?, ?, ?);", username, hexHash, hexSalt)
 	if err != nil {
 		log.Printf("Error registering user to database: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -86,8 +90,22 @@ func (c *authController) loginSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dbPassword, salt []byte
-	c.db.QueryRow("SELECT password, salt FROM users WHERE username=?", username).Scan(&dbPassword, &salt)
+	var hexDBPassword, hexSalt string
+	c.db.QueryRow("SELECT password, salt FROM users WHERE username=?", username).Scan(&hexDBPassword, &hexSalt)
+
+	dbPassword, err := hex.DecodeString(hexDBPassword)
+	if err != nil {
+		log.Printf("Error decoding password hash: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	salt, err := hex.DecodeString(hexSalt)
+	if err != nil {
+		log.Printf("Error decoding salt: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	password := r.FormValue("password")
 	hash := models.HashPasswordWithSalt(password, c.cfg, salt)
