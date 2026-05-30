@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"crypto/subtle"
 	"database/sql"
 	"encoding/hex"
@@ -10,6 +11,10 @@ import (
 	"github.com/moltenwolfcub/giftsWebApp/config"
 	"github.com/moltenwolfcub/giftsWebApp/models"
 )
+
+type contextKey string
+
+const sessionContextKey contextKey = "session"
 
 type authController struct {
 	db  *sql.DB
@@ -117,5 +122,39 @@ func (c *authController) loginSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// build session object
+	// Generate JWT
+	// set cookie
+	// cookie := http.Cookie{}
+	// http.SetCookie(w)
+
 	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func (c *authController) AuthRequired(handler http.HandlerFunc) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		// Read cookie
+		// parse and validate JWT
+		// store session object in context
+		var session *string = nil
+		if session == nil {
+			// http.Redirect(/login)
+			http.Error(w, "Unauthenticated", 403)
+			return
+		}
+
+		userID := "something generated from cookie"
+
+		ctx := context.WithValue(r.Context(), sessionContextKey, userID)
+		handler(w, r.WithContext(ctx))
+	})
+}
+
+func extractUserID(ctx context.Context) string {
+	userID := ctx.Value(sessionContextKey)
+	if userID == nil {
+		return ""
+	}
+	return userID.(string)
 }

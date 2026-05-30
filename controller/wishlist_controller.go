@@ -14,6 +14,8 @@ type wishlistController struct {
 }
 
 func (c *wishlistController) index(w http.ResponseWriter, r *http.Request) {
+	// userID := extractUserID(r.Context())
+
 	wishlist, err := models.LoadWishlist(c.db)
 	if err != nil {
 		log.Print("Error loading wishlist from database:", err)
