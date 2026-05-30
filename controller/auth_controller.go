@@ -90,7 +90,7 @@ func (c *authController) loginSubmit(w http.ResponseWriter, r *http.Request) {
 	c.db.QueryRow("SELECT password, salt FROM users WHERE username=?", username).Scan(&dbPassword, &salt)
 
 	password := r.FormValue("password")
-	hash := models.HasPasswordWithSalt(password, c.cfg, salt)
+	hash := models.HashPasswordWithSalt(password, c.cfg, salt)
 
 	if subtle.ConstantTimeCompare(dbPassword, hash) != 1 {
 		// TODO: add already submitted form data along with
