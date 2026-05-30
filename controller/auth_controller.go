@@ -6,11 +6,13 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/moltenwolfcub/giftsWebApp/config"
 	"github.com/moltenwolfcub/giftsWebApp/models"
 )
 
 type authController struct {
-	db *sql.DB
+	db  *sql.DB
+	cfg *config.Config
 }
 
 func (c *authController) register(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +47,7 @@ func (c *authController) registerSubmit(w http.ResponseWriter, r *http.Request) 
 	//TODO: ensure password isn't too long
 	//TODO: maybe force passwords to be kinda secure
 
-	hash, salt, err := models.HashPassword(password)
+	hash, salt, err := models.HashPassword(password, c.cfg)
 	if err != nil {
 		log.Printf("Error hashing password: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

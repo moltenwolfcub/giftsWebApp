@@ -3,11 +3,13 @@ package controller
 import (
 	"database/sql"
 	"net/http"
+
+	"github.com/moltenwolfcub/giftsWebApp/config"
 )
 
 const templatesPath = "templates"
 
-func BuildRouter(database *sql.DB) http.Handler {
+func BuildRouter(database *sql.DB, cfg *config.Config) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", handleRoot)
@@ -20,7 +22,7 @@ func BuildRouter(database *sql.DB) http.Handler {
 	mux.HandleFunc("POST /wishlist/edit_item/{id}", wishlistController.editItemSubmit)
 	mux.HandleFunc("POST /wishlist/delete_item/{id}", wishlistController.deleteItem)
 
-	authController := &authController{db: database}
+	authController := &authController{db: database, cfg: cfg}
 	mux.HandleFunc("GET /auth/register/", authController.register)
 	mux.HandleFunc("POST /auth/register/", authController.registerSubmit)
 

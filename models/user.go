@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log"
 
+	"github.com/moltenwolfcub/giftsWebApp/config"
 	"golang.org/x/crypto/argon2"
 )
 
@@ -40,28 +41,20 @@ func UsernameTaken(db *sql.DB, username string) (bool, error) {
 	}
 }
 
-const (
-	saltLength uint   = 16
-	iterations uint32 = 4
-	memory     uint32 = 64 * 1024
-	threads    uint8  = 2
-	keyLength  uint32 = 32
-)
-
-func HashPassword(password string) (hash, salt []byte, err error) {
-	salt, err = genSalt()
+func HashPassword(password string, cfg *config.Config) (hash, salt []byte, err error) {
+	salt, err = genSalt(cfg.SaltLength)
 	if err != nil {
 		log.Printf("Error generating salt for Registering password: %v", err)
 		return nil, nil, err
 	}
 
-	hash = argon2.IDKey([]byte(password), salt, iterations, memory, threads, keyLength)
+	hash = argon2.IDKey(append([]byte(password), cfg.Pepper...), salt, cfg.ArgonIterations, cfg.ArgonMem, cfg.ArgonThreads, cfg.HashLength)
 
 	return hash, salt, nil
 }
 
-func genSalt() ([]byte, error) {
-	b := make([]byte, saltLength)
+func genSalt(length uint) ([]byte, error) {
+	b := make([]byte, length)
 	_, err := rand.Read(b)
 	if err != nil {
 		return nil, err

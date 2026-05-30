@@ -17,7 +17,7 @@ type AppServer struct {
 
 func NewAppServer(db *sql.DB, cfg *config.Config) *AppServer {
 	return &AppServer{
-		router: controller.BuildRouter(db),
+		router: controller.BuildRouter(db, cfg),
 		cfg:    *cfg,
 	}
 }
