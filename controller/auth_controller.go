@@ -32,5 +32,15 @@ func (c *authController) registerSubmit(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	password := r.FormValue("password")
+	confirmPassword := r.FormValue("confirm-password")
+
+	if password != confirmPassword {
+		// TODO: add already submitted form data along with
+		// hint complaining about non-identical passwords
+		http.Redirect(w, r, "/auth/register", http.StatusFound)
+		return
+	}
+
 	http.Redirect(w, r, "/", http.StatusFound)
 }
