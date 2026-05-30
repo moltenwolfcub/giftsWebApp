@@ -22,6 +22,7 @@ func (c *authController) registerSubmit(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		log.Printf("Error checking for duplicate username on register: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	log.Print(username, userTaken)
@@ -30,6 +31,7 @@ func (c *authController) registerSubmit(w http.ResponseWriter, r *http.Request) 
 		// TODO: add already submitted form data along with
 		// hint complaining about duplicate username
 		http.Redirect(w, r, "/auth/register", http.StatusFound)
+		return
 	}
 
 	http.Redirect(w, r, "/", http.StatusFound)

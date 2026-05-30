@@ -1,10 +1,10 @@
 package controller
 
 import (
+	"html/template"
 	"log"
 	"net/http"
 	"path/filepath"
-	"text/template"
 )
 
 func serveTemplate(w http.ResponseWriter, page string, data any) {
@@ -15,6 +15,7 @@ func serveTemplate(w http.ResponseWriter, page string, data any) {
 	if err != nil {
 		log.Print("Error parsing template:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	t.Execute(w, data)
