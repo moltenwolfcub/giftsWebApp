@@ -25,8 +25,6 @@ func (c *authController) registerSubmit(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	log.Print(username, userTaken)
-
 	if userTaken {
 		// TODO: add already submitted form data along with
 		// hint complaining about duplicate username
