@@ -64,3 +64,11 @@ func (c *authController) registerSubmit(w http.ResponseWriter, r *http.Request) 
 	//TODO: redirect user to their wishlist once its user protected
 	http.Redirect(w, r, "/", http.StatusFound)
 }
+
+func (c *authController) login(w http.ResponseWriter, r *http.Request) {
+	serveTemplate(w, "auth_login.html", nil)
+}
+
+func (c *authController) loginSubmit(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/", http.StatusFound)
+}

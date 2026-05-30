@@ -1,0 +1,16 @@
+{{define "content"}}
+
+<h1>Log in</h1>
+<hr>
+<form action="/auth/login/" method="post">
+	<label for="username">Username:</label>
+	<input type="text" name="username" placeholder="Enter username" required>
+	<br>
+	<label for="password">Password:</label>
+	<input type="password" name="password" placeholder="Enter password" required>
+	<br><br>
+	<button type="submit">Log In</button>
+	<button type="button" onclick="document.location='/'">Cancel</button>
+</form>
+
+{{end}}

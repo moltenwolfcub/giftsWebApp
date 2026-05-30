@@ -25,6 +25,8 @@ func BuildRouter(database *sql.DB, cfg *config.Config) http.Handler {
 	authController := &authController{db: database, cfg: cfg}
 	mux.HandleFunc("GET /auth/register/", authController.register)
 	mux.HandleFunc("POST /auth/register/", authController.registerSubmit)
+	mux.HandleFunc("GET /auth/login/", authController.login)
+	mux.HandleFunc("POST /auth/login/", authController.loginSubmit)
 
 	return mux
 }
