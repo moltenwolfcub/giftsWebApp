@@ -29,6 +29,19 @@ func genDataBase(t *testing.T) *sql.DB {
 	return db
 }
 
+func createFormRequest(target string, contents map[string]string) *http.Request {
+	form := url.Values{}
+	for k, v := range contents {
+		form.Set(k, v)
+	}
+
+	body := strings.NewReader(form.Encode())
+	req := httptest.NewRequest("POST", target, body)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	return req
+}
+
 func TestAddItem(t *testing.T) {
 	var tests = []struct {
 		testName string
@@ -65,12 +78,7 @@ func TestAddItem(t *testing.T) {
 			// cfg := config.New()
 			router := controller.BuildRouter(db)
 
-			formContents := url.Values{}
-			formContents.Set("itemName", testcase.testName)
-
-			body := strings.NewReader(formContents.Encode())
-			req := httptest.NewRequest("POST", "/wishlist/add_item", body)
-			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			req := createFormRequest("/wishlist/add_item", map[string]string{"itemName": testcase.testName})
 			w := httptest.NewRecorder()
 
 			router.ServeHTTP(w, req)
@@ -113,12 +121,7 @@ func TestAddItemEmpty(t *testing.T) {
 	// cfg := config.New()
 	router := controller.BuildRouter(db)
 
-	formContents := url.Values{}
-	formContents.Set("itemName", "")
-
-	body := strings.NewReader(formContents.Encode())
-	req := httptest.NewRequest("POST", "/wishlist/add_item", body)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req := createFormRequest("/wishlist/add_item", map[string]string{"itemName": ""})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -191,12 +194,7 @@ func TestAddItemMultiple(t *testing.T) {
 	// cfg := config.New()
 	router := controller.BuildRouter(db)
 
-	formContents := url.Values{}
-	formContents.Set("itemName", "item_one")
-
-	body := strings.NewReader(formContents.Encode())
-	req := httptest.NewRequest("POST", "/wishlist/add_item", body)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req := createFormRequest("/wishlist/add_item", map[string]string{"itemName": "item_one"})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -214,12 +212,7 @@ func TestAddItemMultiple(t *testing.T) {
 		t.Errorf("Redirected to wrong webpage. Expected: %s, Got %s", "/wishlist", res.Header["Location"][0])
 	}
 
-	formContents = url.Values{}
-	formContents.Set("itemName", "item_two")
-
-	body = strings.NewReader(formContents.Encode())
-	req = httptest.NewRequest("POST", "/wishlist/add_item", body)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req = createFormRequest("/wishlist/add_item", map[string]string{"itemName": "item_two"})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -283,12 +276,7 @@ func TestAddItemMultipleIdentical(t *testing.T) {
 	// cfg := config.New()
 	router := controller.BuildRouter(db)
 
-	formContents := url.Values{}
-	formContents.Set("itemName", "testItem")
-
-	body := strings.NewReader(formContents.Encode())
-	req := httptest.NewRequest("POST", "/wishlist/add_item", body)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req := createFormRequest("/wishlist/add_item", map[string]string{"itemName": "testItem"})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -306,12 +294,7 @@ func TestAddItemMultipleIdentical(t *testing.T) {
 		t.Errorf("Redirected to wrong webpage. Expected: %s, Got %s", "/wishlist", res.Header["Location"][0])
 	}
 
-	formContents = url.Values{}
-	formContents.Set("itemName", "testItem")
-
-	body = strings.NewReader(formContents.Encode())
-	req = httptest.NewRequest("POST", "/wishlist/add_item", body)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req = createFormRequest("/wishlist/add_item", map[string]string{"itemName": "testItem"})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
