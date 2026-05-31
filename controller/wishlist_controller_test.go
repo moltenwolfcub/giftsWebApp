@@ -84,6 +84,10 @@ func TestAddItem(t *testing.T) {
 				t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusFound, res.StatusCode)
 			}
 
+			if res.Header["Location"][0] != "/wishlist" {
+				t.Errorf("Redirected to wrong webpage. Expected: %s, Got %s", "/wishlist", res.Header["Location"][0])
+			}
+
 			var gotWishlistId int
 			var gotName string
 			err := db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
@@ -126,6 +130,10 @@ func TestAddItemEmpty(t *testing.T) {
 
 	if res.StatusCode != http.StatusFound { //TODO check all status codes used are correct
 		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusFound, res.StatusCode)
+	}
+
+	if res.Header["Location"][0] != "/wishlist/add_item" {
+		t.Errorf("Redirected to wrong webpage. Expected: %s, Got %s", "/wishlist/add_item", res.Header["Location"][0])
 	}
 
 	var found int
