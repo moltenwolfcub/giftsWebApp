@@ -42,6 +42,17 @@ func createFormRequest(target string, contents map[string]string) *http.Request 
 	return req
 }
 
+func assertRedirect(t *testing.T, res *http.Response, expected string) {
+	if res.StatusCode != http.StatusFound { //TODO check all status codes used are correct
+		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusFound, res.StatusCode)
+	}
+
+	if res.Header["Location"][0] != expected {
+		t.Errorf("Redirected to wrong webpage. Expected: %s, Got %s", expected, res.Header["Location"][0])
+	}
+
+}
+
 func TestAddItem(t *testing.T) {
 	var tests = []struct {
 		testName string
@@ -88,13 +99,7 @@ func TestAddItem(t *testing.T) {
 				res.Body.Close()
 			})
 
-			if res.StatusCode != http.StatusFound { //TODO check all status codes used are correct
-				t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusFound, res.StatusCode)
-			}
-
-			if res.Header["Location"][0] != "/wishlist" {
-				t.Errorf("Redirected to wrong webpage. Expected: %s, Got %s", "/wishlist", res.Header["Location"][0])
-			}
+			assertRedirect(t, res, "/wishlist")
 
 			var gotWishlistId int
 			var gotName string
@@ -131,13 +136,7 @@ func TestAddItemEmpty(t *testing.T) {
 		res.Body.Close()
 	})
 
-	if res.StatusCode != http.StatusFound { //TODO check all status codes used are correct
-		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusFound, res.StatusCode)
-	}
-
-	if res.Header["Location"][0] != "/wishlist/add_item" {
-		t.Errorf("Redirected to wrong webpage. Expected: %s, Got %s", "/wishlist/add_item", res.Header["Location"][0])
-	}
+	assertRedirect(t, res, "/wishlist/add_item")
 
 	var found int
 	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
@@ -168,13 +167,7 @@ func TestAddItemNoBody(t *testing.T) {
 		res.Body.Close()
 	})
 
-	if res.StatusCode != http.StatusFound { //TODO check all status codes used are correct
-		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusFound, res.StatusCode)
-	}
-
-	if res.Header["Location"][0] != "/wishlist/add_item" {
-		t.Errorf("Redirected to wrong webpage. Expected: %s, Got %s", "/wishlist/add_item", res.Header["Location"][0])
-	}
+	assertRedirect(t, res, "/wishlist/add_item")
 
 	var found int
 	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
@@ -204,13 +197,7 @@ func TestAddItemMultiple(t *testing.T) {
 		res.Body.Close()
 	})
 
-	if res.StatusCode != http.StatusFound { //TODO check all status codes used are correct
-		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusFound, res.StatusCode)
-	}
-
-	if res.Header["Location"][0] != "/wishlist" {
-		t.Errorf("Redirected to wrong webpage. Expected: %s, Got %s", "/wishlist", res.Header["Location"][0])
-	}
+	assertRedirect(t, res, "/wishlist")
 
 	req = createFormRequest("/wishlist/add_item", map[string]string{"itemName": "item_two"})
 	w = httptest.NewRecorder()
@@ -222,13 +209,7 @@ func TestAddItemMultiple(t *testing.T) {
 		res.Body.Close()
 	})
 
-	if res.StatusCode != http.StatusFound { //TODO check all status codes used are correct
-		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusFound, res.StatusCode)
-	}
-
-	if res.Header["Location"][0] != "/wishlist" {
-		t.Errorf("Redirected to wrong webpage. Expected: %s, Got %s", "/wishlist", res.Header["Location"][0])
-	}
+	assertRedirect(t, res, "/wishlist")
 
 	var found int
 	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
@@ -286,13 +267,7 @@ func TestAddItemMultipleIdentical(t *testing.T) {
 		res.Body.Close()
 	})
 
-	if res.StatusCode != http.StatusFound { //TODO check all status codes used are correct
-		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusFound, res.StatusCode)
-	}
-
-	if res.Header["Location"][0] != "/wishlist" {
-		t.Errorf("Redirected to wrong webpage. Expected: %s, Got %s", "/wishlist", res.Header["Location"][0])
-	}
+	assertRedirect(t, res, "/wishlist")
 
 	req = createFormRequest("/wishlist/add_item", map[string]string{"itemName": "testItem"})
 	w = httptest.NewRecorder()
@@ -304,13 +279,7 @@ func TestAddItemMultipleIdentical(t *testing.T) {
 		res.Body.Close()
 	})
 
-	if res.StatusCode != http.StatusFound { //TODO check all status codes used are correct
-		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusFound, res.StatusCode)
-	}
-
-	if res.Header["Location"][0] != "/wishlist" {
-		t.Errorf("Redirected to wrong webpage. Expected: %s, Got %s", "/wishlist", res.Header["Location"][0])
-	}
+	assertRedirect(t, res, "/wishlist")
 
 	var found int
 	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
