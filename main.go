@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 
 	"github.com/moltenwolfcub/giftsWebApp/app"
@@ -10,9 +11,12 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const MIGRATE = true
+var migrateFlag bool
 
 func main() {
+	flag.BoolVar(&migrateFlag, "migrate", false, "Whether the database should apply any new migrations")
+	flag.Parse()
+
 	cfg := config.New()
 
 	db, err := database.ConnectDB()
@@ -20,7 +24,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if MIGRATE {
+	if migrateFlag {
 		err := database.MigrateDB(db)
 		if err != nil {
 			log.Fatal(err)
