@@ -30,44 +30,74 @@ func genDataBase(t *testing.T) *sql.DB {
 }
 
 func TestAddItem(t *testing.T) {
-	db := genDataBase(t)
-	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
-
-	// cfg := config.New()
-	router := controller.BuildRouter(db)
-
-	testName := "Test Item"
-
-	formContents := url.Values{}
-	formContents.Set("itemName", testName)
-
-	body := strings.NewReader(formContents.Encode())
-	req := httptest.NewRequest("POST", "/wishlist/add_item", body)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
-	res := w.Result()
-	t.Cleanup(func() {
-		res.Body.Close()
-	})
-
-	if res.StatusCode != http.StatusFound { //TODO check all status codes used are correct
-		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusFound, res.StatusCode)
+	var tests = []struct {
+		testName string
+		itemName string
+	}{
+		{
+			"Normal",
+			"TestItem",
+		},
+		{
+			"Space",
+			"Test Item",
+		},
+		{
+			"Numeric",
+			"3141592653589793",
+		},
+		{
+			"Unicode",
+			"!#$%& ̄f ̅ ̆ ̇ ̈ ̉ ̊ ̋ ̌ ̍ ̎ ̏ ̐ ̑ ̒ ̓ ̔ ̕ ζδψφΔΓΨΣΩ",
+		},
+		{
+			"SQL Injection",
+			"foo);DROP TABLE wishlist_items;",
+		},
 	}
 
-	var wishlistId int
-	var itemName string
-	err := db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&wishlistId, &itemName)
-	if err != nil {
-		t.Errorf("Error querying database for inserted item: %v", err)
-	}
+	for _, testcase := range tests {
+		t.Run(testcase.testName, func(t *testing.T) {
 
-	if wishlistId != 1 {
-		t.Errorf("Wrong wishlist_id. Expected: %d, Got %d", 1, wishlistId)
-	}
-	if itemName != testName {
-		t.Errorf("Wrong item_name. Expected: %s, Got %s", testName, itemName)
+			db := genDataBase(t)
+			db.Exec("INSERT INTO wishlists DEFAULT VALUES")
+
+			// cfg := config.New()
+			router := controller.BuildRouter(db)
+
+			formContents := url.Values{}
+			formContents.Set("itemName", testcase.testName)
+
+			body := strings.NewReader(formContents.Encode())
+			req := httptest.NewRequest("POST", "/wishlist/add_item", body)
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			res := w.Result()
+			t.Cleanup(func() {
+				res.Body.Close()
+			})
+
+			if res.StatusCode != http.StatusFound { //TODO check all status codes used are correct
+				t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusFound, res.StatusCode)
+			}
+
+			var gotWishlistId int
+			var gotName string
+			err := db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+			if err != nil {
+				t.Errorf("Error querying database for inserted item: %v", err)
+			}
+
+			if gotWishlistId != 1 {
+				t.Errorf("Wrong wishlist_id. Expected: %d, Got %d", 1, gotWishlistId)
+			}
+			if gotName != testcase.testName {
+				t.Errorf("Wrong item_name. Expected: %s, Got %s", testcase.testName, gotName)
+			}
+
+		})
 	}
 }
