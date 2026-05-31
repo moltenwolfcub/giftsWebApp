@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/moltenwolfcub/giftsWebApp/config"
 	"github.com/moltenwolfcub/giftsWebApp/controller"
 )
 
@@ -17,8 +16,8 @@ func genDataBase() (*sql.DB, func()) {
 func TestAddItem(t *testing.T) {
 	db, teardownDB := genDataBase()
 	defer teardownDB()
-	cfg := config.New()
-	router := controller.BuildRouter(db, cfg)
+	// cfg := config.New()
+	router := controller.BuildRouter(db)
 
 	req := httptest.NewRequest("POST", "/wishlist/add_item", nil)
 	w := httptest.NewRecorder()
