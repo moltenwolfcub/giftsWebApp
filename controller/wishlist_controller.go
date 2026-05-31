@@ -31,9 +31,14 @@ func (c *wishlistController) addItem(w http.ResponseWriter, r *http.Request) {
 func (c *wishlistController) addItemSubmit(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("itemName")
 
-	c.db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, ?);", name)
+	if name != "" {
+		c.db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, ?);", name)
 
-	http.Redirect(w, r, "/wishlist", http.StatusFound)
+		http.Redirect(w, r, "/wishlist", http.StatusFound)
+	} else {
+		http.Redirect(w, r, "/wishlist/add_item", http.StatusFound)
+	}
+
 }
 
 func (c *wishlistController) editItem(w http.ResponseWriter, r *http.Request) {

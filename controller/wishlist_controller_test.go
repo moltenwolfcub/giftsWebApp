@@ -101,3 +101,40 @@ func TestAddItem(t *testing.T) {
 		})
 	}
 }
+
+func TestAddItemEmpty(t *testing.T) {
+	db := genDataBase(t)
+	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
+
+	// cfg := config.New()
+	router := controller.BuildRouter(db)
+
+	formContents := url.Values{}
+	formContents.Set("itemName", "")
+
+	body := strings.NewReader(formContents.Encode())
+	req := httptest.NewRequest("POST", "/wishlist/add_item", body)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res := w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	if res.StatusCode != http.StatusFound { //TODO check all status codes used are correct
+		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusFound, res.StatusCode)
+	}
+
+	var found int
+	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
+	if err != nil {
+		t.Errorf("Error counting rows in database: %v", err)
+	}
+
+	if found > 0 {
+		t.Errorf("Empty item put in database. Expected %d item(s), Got %d", 0, found)
+	}
+}
