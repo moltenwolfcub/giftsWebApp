@@ -18,6 +18,7 @@ func (c *wishlistController) index(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Print("Error loading wishlist from database:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	serveTemplate(w, "wishlist.html", wishlist)
@@ -41,11 +42,13 @@ func (c *wishlistController) editItem(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Print("Non-integer id given to editItem handler:", err)
 		http.Error(w, err.Error(), http.StatusNotFound)
+		return
 	}
 	item, err := models.LoadWishlistItem(c.db, editIDint)
 	if err != nil {
 		log.Print("Error loading wishlist item to edit:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	serveTemplate(w, "wishlist_edit.html", item)

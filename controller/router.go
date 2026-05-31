@@ -2,10 +2,7 @@ package controller
 
 import (
 	"database/sql"
-	"log"
 	"net/http"
-	"path/filepath"
-	"text/template"
 )
 
 const templatesPath = "templates"
@@ -27,14 +24,5 @@ func BuildRouter(database *sql.DB) http.Handler {
 }
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles(
-		filepath.Join(templatesPath, "_base.html"),
-		filepath.Join(templatesPath, "index.html"),
-	)
-	if err != nil {
-		log.Print("Error parsing template:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	t.Execute(w, nil)
+	serveTemplate(w, "index.html", nil)
 }
