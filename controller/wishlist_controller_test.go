@@ -53,6 +53,13 @@ func assertRedirect(t *testing.T, res *http.Response, expected string) {
 
 }
 
+func assert[K comparable](t *testing.T, got, want K, msg string) {
+	if got != want {
+		t.Errorf("%s. Expected: %v, Got %v", msg, want, got)
+	}
+
+}
+
 func TestAddItem(t *testing.T) {
 	var tests = []struct {
 		testName string
@@ -108,13 +115,8 @@ func TestAddItem(t *testing.T) {
 				t.Errorf("Error querying database for inserted item: %v", err)
 			}
 
-			if gotWishlistId != 1 {
-				t.Errorf("Wrong wishlist_id. Expected: %d, Got %d", 1, gotWishlistId)
-			}
-			if gotName != testcase.testName {
-				t.Errorf("Wrong item_name. Expected: %s, Got %s", testcase.testName, gotName)
-			}
-
+			assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+			assert(t, gotName, testcase.testName, "Wrong item_name")
 		})
 	}
 }
@@ -217,9 +219,7 @@ func TestAddItemMultiple(t *testing.T) {
 		t.Errorf("Error counting rows in database: %v", err)
 	}
 
-	if found != 2 {
-		t.Errorf("Wrong number of items in database. Expected %d item(s), Got %d", 2, found)
-	}
+	assert(t, found, 2, "Wrong number of items in database")
 
 	var gotWishlistId1 int
 	var gotName1 string
@@ -228,12 +228,8 @@ func TestAddItemMultiple(t *testing.T) {
 		t.Errorf("Error querying database for inserted item: %v", err)
 	}
 
-	if gotWishlistId1 != 1 {
-		t.Errorf("Wrong wishlist_id on item one. Expected: %d, Got %d", 1, gotWishlistId1)
-	}
-	if gotName1 != "item_one" {
-		t.Errorf("Wrong item_name. Expected: %s, Got %s", "item_one", gotName1)
-	}
+	assert(t, gotWishlistId1, 1, "Wrong wishlist_id")
+	assert(t, gotName1, "item_one", "Wrong item_name")
 
 	var gotWishlistId2 int
 	var gotName2 string
@@ -242,12 +238,8 @@ func TestAddItemMultiple(t *testing.T) {
 		t.Errorf("Error querying database for inserted item: %v", err)
 	}
 
-	if gotWishlistId2 != 1 {
-		t.Errorf("Wrong wishlist_id on item two. Expected: %d, Got %d", 1, gotWishlistId1)
-	}
-	if gotName2 != "item_two" {
-		t.Errorf("Wrong item_name. Expected: %s, Got %s", "item_two", gotName1)
-	}
+	assert(t, gotWishlistId2, 1, "Wrong wishlist_id")
+	assert(t, gotName2, "item_two", "Wrong item_name")
 }
 
 func TestAddItemMultipleIdentical(t *testing.T) {
@@ -287,9 +279,7 @@ func TestAddItemMultipleIdentical(t *testing.T) {
 		t.Errorf("Error counting rows in database: %v", err)
 	}
 
-	if found != 2 {
-		t.Errorf("Wrong number of items in database. Expected %d item(s), Got %d", 2, found)
-	}
+	assert(t, found, 2, "Wrong number of items in database")
 
 	var gotWishlistId1 int
 	var gotName1 string
@@ -298,12 +288,8 @@ func TestAddItemMultipleIdentical(t *testing.T) {
 		t.Errorf("Error querying database for inserted item: %v", err)
 	}
 
-	if gotWishlistId1 != 1 {
-		t.Errorf("Wrong wishlist_id on item one. Expected: %d, Got %d", 1, gotWishlistId1)
-	}
-	if gotName1 != "testItem" {
-		t.Errorf("Wrong item_name. Expected: %s, Got %s", "item_one", gotName1)
-	}
+	assert(t, gotWishlistId1, 1, "Wrong wishlist_id")
+	assert(t, gotName1, "testItem", "Wrong item_name")
 
 	var gotWishlistId2 int
 	var gotName2 string
@@ -312,10 +298,6 @@ func TestAddItemMultipleIdentical(t *testing.T) {
 		t.Errorf("Error querying database for inserted item: %v", err)
 	}
 
-	if gotWishlistId2 != 1 {
-		t.Errorf("Wrong wishlist_id on item two. Expected: %d, Got %d", 1, gotWishlistId1)
-	}
-	if gotName2 != "testItem" {
-		t.Errorf("Wrong item_name. Expected: %s, Got %s", "item_two", gotName1)
-	}
+	assert(t, gotWishlistId2, 1, "Wrong wishlist_id")
+	assert(t, gotName2, "testItem", "Wrong item_name")
 }
