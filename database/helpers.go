@@ -11,40 +11,42 @@ import (
 
 const databasePath = "database"
 
-func connectDB(loc string) *sql.DB {
+func connectDB(loc string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite", loc)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	if err := db.Ping(); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	// defer db.Close()
 	log.Println("Connected to database")
 
-	return db
+	return db, nil
 }
-func ConnectDB() *sql.DB {
+func ConnectDB() (*sql.DB, error) {
 	return connectDB(filepath.Join(databasePath, "dev.db"))
 }
-func ConnectTestDB() *sql.DB {
+func ConnectTestDB() (*sql.DB, error) {
 	return connectDB(":memory:")
 }
 
 //go:embed migrations/*.sql
 var embedMigrations embed.FS
 
-func MigrateDB(db *sql.DB) {
+func MigrateDB(db *sql.DB) error {
 	goose.SetBaseFS(embedMigrations)
 
 	if err := goose.SetDialect("sqlite3"); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	log.Println("Checking for database migrations...")
 	if err := goose.Up(db, "migrations"); err != nil {
-		log.Fatal(err)
+		return err
 	}
 	log.Println("Database migrations up to date")
+
+	return nil
 }
