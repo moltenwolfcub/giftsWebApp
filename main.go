@@ -8,10 +8,12 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+const MIGRATE = true
+
 func main() {
 	cfg := config.New()
 
-	db := database.LoadDatabase()
+	db := database.LoadDatabase(MIGRATE)
 
 	app := app.NewAppServer(db, cfg)
 	app.Run()
