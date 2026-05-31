@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/pressly/goose/v3"
+
+	_ "modernc.org/sqlite"
 )
 
 const databasePath = "database"

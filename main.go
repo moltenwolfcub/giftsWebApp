@@ -7,8 +7,6 @@ import (
 	"github.com/moltenwolfcub/giftsWebApp/app"
 	"github.com/moltenwolfcub/giftsWebApp/config"
 	"github.com/moltenwolfcub/giftsWebApp/database"
-
-	_ "modernc.org/sqlite"
 )
 
 var migrateFlag bool
