@@ -13,7 +13,10 @@ const MIGRATE = true
 func main() {
 	cfg := config.New()
 
-	db := database.LoadDatabase(MIGRATE)
+	db := database.ConnectDB()
+	if MIGRATE {
+		database.MigrateDB(db)
+	}
 
 	app := app.NewAppServer(db, cfg)
 	app.Run()
