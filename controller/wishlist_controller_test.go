@@ -2,6 +2,7 @@ package controller_test
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -50,6 +51,16 @@ func assertRedirect(t *testing.T, res *http.Response, expected string) {
 	if res.Header["Location"][0] != expected {
 		t.Errorf("Redirected to wrong webpage. Expected: %s, Got %s", expected, res.Header["Location"][0])
 	}
+}
+
+func assertCount(t *testing.T, db *sql.DB, table string, expected int) {
+	var found int
+	err := db.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s", table)).Scan(&found)
+	if err != nil {
+		t.Errorf("Error counting rows in database: %v", err)
+	}
+
+	assert(t, found, expected, "Wrong number of items in "+table)
 }
 
 func assert[K comparable](t *testing.T, got, want K, msg string) {
@@ -107,6 +118,8 @@ func TestAddItem(t *testing.T) {
 
 			assertRedirect(t, res, "/wishlist")
 
+			assertCount(t, db, "wishlist_items", 1)
+
 			var gotWishlistId int
 			var gotName string
 			err := db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
@@ -139,15 +152,7 @@ func TestAddItemEmpty(t *testing.T) {
 
 	assertRedirect(t, res, "/wishlist/add_item")
 
-	var found int
-	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
-	if err != nil {
-		t.Errorf("Error counting rows in database: %v", err)
-	}
-
-	if found > 0 {
-		t.Errorf("Empty item put in database. Expected %d item(s), Got %d", 0, found)
-	}
+	assertCount(t, db, "wishlist_items", 0)
 }
 
 func TestAddItemNoBody(t *testing.T) {
@@ -170,15 +175,7 @@ func TestAddItemNoBody(t *testing.T) {
 
 	assertRedirect(t, res, "/wishlist/add_item")
 
-	var found int
-	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
-	if err != nil {
-		t.Errorf("Error counting rows in database: %v", err)
-	}
-
-	if found > 0 {
-		t.Errorf("Empty body POST put item in database. Expected %d item(s), Got %d", 0, found)
-	}
+	assertCount(t, db, "wishlist_items", 0)
 }
 
 func TestAddItemMultiple(t *testing.T) {
@@ -212,17 +209,11 @@ func TestAddItemMultiple(t *testing.T) {
 
 	assertRedirect(t, res, "/wishlist")
 
-	var found int
-	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
-	if err != nil {
-		t.Errorf("Error counting rows in database: %v", err)
-	}
-
-	assert(t, found, 2, "Wrong number of items in database")
+	assertCount(t, db, "wishlist_items", 2)
 
 	var gotWishlistId1 int
 	var gotName1 string
-	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId1, &gotName1)
+	err := db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId1, &gotName1)
 	if err != nil {
 		t.Errorf("Error querying database for inserted item: %v", err)
 	}
@@ -272,17 +263,11 @@ func TestAddItemMultipleIdentical(t *testing.T) {
 
 	assertRedirect(t, res, "/wishlist")
 
-	var found int
-	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
-	if err != nil {
-		t.Errorf("Error counting rows in database: %v", err)
-	}
-
-	assert(t, found, 2, "Wrong number of items in database")
+	assertCount(t, db, "wishlist_items", 2)
 
 	var gotWishlistId1 int
 	var gotName1 string
-	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId1, &gotName1)
+	err := db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId1, &gotName1)
 	if err != nil {
 		t.Errorf("Error querying database for inserted item: %v", err)
 	}
@@ -350,17 +335,11 @@ func TestEditItem(t *testing.T) {
 
 			assertRedirect(t, res, "/wishlist")
 
-			var found int
-			err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
-			if err != nil {
-				t.Errorf("Error counting rows in database: %v", err)
-			}
-
-			assert(t, found, 1, "Wrong number of items in wishlist_items")
+			assertCount(t, db, "wishlist_items", 1)
 
 			var gotWishlistId int
 			var gotName string
-			err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+			err := db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
 			if err != nil {
 				t.Errorf("Error querying database for changed item: %v", err)
 			}
@@ -391,17 +370,11 @@ func TestEditItemEmpty(t *testing.T) {
 
 	assertRedirect(t, res, "/wishlist/edit_item/1")
 
-	var found int
-	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
-	if err != nil {
-		t.Errorf("Error counting rows in database: %v", err)
-	}
-
-	assert(t, found, 1, "Wrong number of items in wishlist_items")
+	assertCount(t, db, "wishlist_items", 1)
 
 	var gotWishlistId int
 	var gotName string
-	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+	err := db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
 	if err != nil {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
@@ -431,17 +404,11 @@ func TestEditSameItemTwice(t *testing.T) {
 
 	assertRedirect(t, res, "/wishlist")
 
-	var found int
-	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
-	if err != nil {
-		t.Errorf("Error counting rows in database: %v", err)
-	}
-
-	assert(t, found, 1, "Wrong number of items in wishlist_items")
+	assertCount(t, db, "wishlist_items", 1)
 
 	var gotWishlistId int
 	var gotName string
-	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+	err := db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
 	if err != nil {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
@@ -462,12 +429,7 @@ func TestEditSameItemTwice(t *testing.T) {
 
 	assertRedirect(t, res, "/wishlist")
 
-	err = db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
-	if err != nil {
-		t.Errorf("Error counting rows in database: %v", err)
-	}
-
-	assert(t, found, 1, "Wrong number of items in wishlist_items")
+	assertCount(t, db, "wishlist_items", 1)
 
 	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
 	if err != nil {
@@ -500,17 +462,11 @@ func TestEditItemWithOthers(t *testing.T) {
 
 	assertRedirect(t, res, "/wishlist")
 
-	var found int
-	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
-	if err != nil {
-		t.Errorf("Error counting rows in database: %v", err)
-	}
-
-	assert(t, found, 3, "Wrong number of items in wishlist_items")
+	assertCount(t, db, "wishlist_items", 3)
 
 	var gotWishlistId int
 	var gotName string
-	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+	err := db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
 	if err != nil {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
@@ -573,17 +529,11 @@ func TestEditItemMultiple(t *testing.T) {
 
 	assertRedirect(t, res, "/wishlist")
 
-	var found int
-	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
-	if err != nil {
-		t.Errorf("Error counting rows in database: %v", err)
-	}
-
-	assert(t, found, 3, "Wrong number of items in wishlist_items")
+	assertCount(t, db, "wishlist_items", 3)
 
 	var gotWishlistId int
 	var gotName string
-	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+	err := db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
 	if err != nil {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
@@ -633,17 +583,11 @@ func TestEditItemMultipleIdentical(t *testing.T) {
 
 	assertRedirect(t, res, "/wishlist")
 
-	var found int
-	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
-	if err != nil {
-		t.Errorf("Error counting rows in database: %v", err)
-	}
-
-	assert(t, found, 2, "Wrong number of items in wishlist_items")
+	assertCount(t, db, "wishlist_items", 2)
 
 	var gotWishlistId int
 	var gotName string
-	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+	err := db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
 	if err != nil {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
@@ -684,17 +628,11 @@ func TestEditItemInvalidID(t *testing.T) {
 		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusNotFound, res.StatusCode)
 	}
 
-	var found int
-	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
-	if err != nil {
-		t.Errorf("Error counting rows in database: %v", err)
-	}
-
-	assert(t, found, 1, "Wrong number of items in wishlist_items")
+	assertCount(t, db, "wishlist_items", 1)
 
 	var gotWishlistId int
 	var gotName string
-	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+	err := db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
 	if err != nil {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
@@ -724,17 +662,11 @@ func TestEditItemNoBody(t *testing.T) {
 
 	assertRedirect(t, res, "/wishlist/edit_item/1")
 
-	var found int
-	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
-	if err != nil {
-		t.Errorf("Error counting rows in database: %v", err)
-	}
-
-	assert(t, found, 1, "Wrong number of items in wishlist_items")
+	assertCount(t, db, "wishlist_items", 1)
 
 	var gotWishlistId int
 	var gotName string
-	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+	err := db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
 	if err != nil {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
