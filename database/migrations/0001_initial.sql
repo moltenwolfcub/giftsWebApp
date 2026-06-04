@@ -1,3 +1,4 @@
+-- +goose Up
 CREATE TABLE wishlists (
 	id INTEGER PRIMARY KEY AUTOINCREMENT
 );
