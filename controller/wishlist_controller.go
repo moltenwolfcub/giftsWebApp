@@ -100,6 +100,18 @@ func (c *wishlistController) editItemSubmit(w http.ResponseWriter, r *http.Reque
 func (c *wishlistController) deleteItem(w http.ResponseWriter, r *http.Request) {
 	deleteID := r.PathValue("id")
 
+	var found int
+	err := c.db.QueryRow("SELECT COUNT(*) FROM wishlist_items WHERE id=?", deleteID).Scan(&found)
+	if err != nil {
+		log.Print("Error counting items in wishlist_items:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if found != 1 {
+		http.Error(w, "Tried to delete an item that doesn't exist", http.StatusNotFound)
+		return
+	}
+
 	c.db.Exec("DELETE FROM wishlist_items WHERE id=?", deleteID)
 
 	http.Redirect(w, r, "/wishlist", http.StatusFound)

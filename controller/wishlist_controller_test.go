@@ -697,3 +697,156 @@ func TestDeleteItem(t *testing.T) {
 
 	assertCount(t, db, "wishlist_items", 0)
 }
+
+func TestDeleteItemWithOthers(t *testing.T) {
+	db := genDataBase(t)
+	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"Important Item Don't Delete\");")
+
+	// cfg := config.New()
+	router := controller.BuildRouter(db)
+
+	req := createFormRequest("/wishlist/delete_item/1", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res := w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	assertRedirect(t, res, "/wishlist")
+
+	assertCount(t, db, "wishlist_items", 1)
+
+	var gotWishlistId int
+	var gotName string
+	err := db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=2").Scan(&gotWishlistId, &gotName)
+	if err != nil {
+		t.Errorf("Error querying database for changed item: %v", err)
+	}
+
+	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	assert(t, gotName, "Important Item Don't Delete", "Wrong item_name")
+}
+
+func TestDeleteItemMultiple(t *testing.T) {
+	db := genDataBase(t)
+	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"secondaryItem\");")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"Important Item Don't Delete\");")
+
+	// cfg := config.New()
+	router := controller.BuildRouter(db)
+
+	req := createFormRequest("/wishlist/delete_item/1", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res := w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	assertRedirect(t, res, "/wishlist")
+
+	req = createFormRequest("/wishlist/delete_item/2", nil)
+	w = httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res = w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	assertRedirect(t, res, "/wishlist")
+
+	assertCount(t, db, "wishlist_items", 1)
+
+	var gotWishlistId int
+	var gotName string
+	err := db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=3").Scan(&gotWishlistId, &gotName)
+	if err != nil {
+		t.Errorf("Error querying database for changed item: %v", err)
+	}
+
+	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	assert(t, gotName, "Important Item Don't Delete", "Wrong item_name")
+}
+
+func TestDeleteItemInvalidID(t *testing.T) {
+	db := genDataBase(t)
+	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
+
+	// cfg := config.New()
+	router := controller.BuildRouter(db)
+
+	req := createFormRequest("/wishlist/delete_item/5", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res := w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	if res.StatusCode != http.StatusNotFound {
+		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusNotFound, res.StatusCode)
+	}
+
+	assertCount(t, db, "wishlist_items", 1)
+
+	var gotWishlistId int
+	var gotName string
+	err := db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+	if err != nil {
+		t.Errorf("Error querying database for changed item: %v", err)
+	}
+
+	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	assert(t, gotName, "initialItem", "Wrong item_name")
+}
+
+func TestDeleteItemDoubleDelete(t *testing.T) {
+	db := genDataBase(t)
+	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
+
+	// cfg := config.New()
+	router := controller.BuildRouter(db)
+
+	req := createFormRequest("/wishlist/delete_item/1", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res := w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	assertRedirect(t, res, "/wishlist")
+
+	req = createFormRequest("/wishlist/delete_item/1", nil)
+	w = httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res = w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	if res.StatusCode != http.StatusNotFound {
+		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusNotFound, res.StatusCode)
+	}
+
+	assertCount(t, db, "wishlist_items", 0)
+}
