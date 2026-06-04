@@ -674,3 +674,26 @@ func TestEditItemNoBody(t *testing.T) {
 	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
 	assert(t, gotName, "initialItem", "Wrong item_name")
 }
+
+func TestDeleteItem(t *testing.T) {
+	db := genDataBase(t)
+	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
+
+	// cfg := config.New()
+	router := controller.BuildRouter(db)
+
+	req := createFormRequest("/wishlist/delete_item/1", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res := w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	assertRedirect(t, res, "/wishlist")
+
+	assertCount(t, db, "wishlist_items", 0)
+}
