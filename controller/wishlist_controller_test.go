@@ -363,7 +363,7 @@ func TestEditItem(t *testing.T) {
 			var gotName string
 			err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
 			if err != nil {
-				t.Errorf("Error querying database for inserted item: %v", err)
+				t.Errorf("Error querying database for changed item: %v", err)
 			}
 
 			assert(t, gotWishlistId, 1, "Wrong wishlist_id")
@@ -404,9 +404,261 @@ func TestEditItemEmpty(t *testing.T) {
 	var gotName string
 	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
 	if err != nil {
-		t.Errorf("Error querying database for inserted item: %v", err)
+		t.Errorf("Error querying database for changed item: %v", err)
 	}
 
 	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
 	assert(t, gotName, "initialItem", "Wrong item_name")
+}
+
+func TestEditSameItemTwice(t *testing.T) {
+	db := genDataBase(t)
+	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
+
+	// cfg := config.New()
+	router := controller.BuildRouter(db)
+
+	// FIRST CHANGE
+	req := createFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": "updatedVersion"})
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res := w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	assertRedirect(t, res, "/wishlist")
+
+	var found int
+	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
+	if err != nil {
+		t.Errorf("Error counting rows in database: %v", err)
+	}
+
+	assert(t, found, 1, "Wrong number of items in wishlist_items")
+
+	var gotWishlistId int
+	var gotName string
+	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+	if err != nil {
+		t.Errorf("Error querying database for changed item: %v", err)
+	}
+
+	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	assert(t, gotName, "updatedVersion", "Wrong item_name")
+
+	// SECOND CHANGE
+	req = createFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": "finalVersion"})
+	w = httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res = w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	assertRedirect(t, res, "/wishlist")
+
+	err = db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
+	if err != nil {
+		t.Errorf("Error counting rows in database: %v", err)
+	}
+
+	assert(t, found, 1, "Wrong number of items in wishlist_items")
+
+	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+	if err != nil {
+		t.Errorf("Error querying database for changed item: %v", err)
+	}
+
+	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	assert(t, gotName, "finalVersion", "Wrong item_name")
+}
+
+func TestEditItemWithOthers(t *testing.T) {
+	db := genDataBase(t)
+	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"secondaryItem\");")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"thirdItem\");")
+
+	// cfg := config.New()
+	router := controller.BuildRouter(db)
+
+	req := createFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": "editedItem"})
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res := w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	assertRedirect(t, res, "/wishlist")
+
+	var found int
+	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
+	if err != nil {
+		t.Errorf("Error counting rows in database: %v", err)
+	}
+
+	assert(t, found, 3, "Wrong number of items in wishlist_items")
+
+	var gotWishlistId int
+	var gotName string
+	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+	if err != nil {
+		t.Errorf("Error querying database for changed item: %v", err)
+	}
+
+	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	assert(t, gotName, "editedItem", "Wrong item_name")
+
+	var gotWishlistId2 int
+	var gotName2 string
+	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=2").Scan(&gotWishlistId2, &gotName2)
+	if err != nil {
+		t.Errorf("Error querying database for unchanged item: %v", err)
+	}
+
+	assert(t, gotWishlistId2, 1, "Wrong wishlist_id")
+	assert(t, gotName2, "secondaryItem", "Wrong item_name")
+
+	var gotWishlistId3 int
+	var gotName3 string
+	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=3").Scan(&gotWishlistId3, &gotName3)
+	if err != nil {
+		t.Errorf("Error querying database for unchanged item: %v", err)
+	}
+
+	assert(t, gotWishlistId3, 1, "Wrong wishlist_id")
+	assert(t, gotName3, "thirdItem", "Wrong item_name")
+}
+
+func TestEditItemMultiple(t *testing.T) {
+	db := genDataBase(t)
+	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"secondaryItem\");")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"thirdItem\");")
+
+	// cfg := config.New()
+	router := controller.BuildRouter(db)
+
+	req := createFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": "editedItem"})
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res := w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	assertRedirect(t, res, "/wishlist")
+
+	req = createFormRequest("/wishlist/edit_item/2", map[string]string{"itemName": "otherItemEdited"})
+	w = httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res = w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	assertRedirect(t, res, "/wishlist")
+
+	var found int
+	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
+	if err != nil {
+		t.Errorf("Error counting rows in database: %v", err)
+	}
+
+	assert(t, found, 3, "Wrong number of items in wishlist_items")
+
+	var gotWishlistId int
+	var gotName string
+	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+	if err != nil {
+		t.Errorf("Error querying database for changed item: %v", err)
+	}
+
+	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	assert(t, gotName, "editedItem", "Wrong item_name")
+
+	var gotWishlistId2 int
+	var gotName2 string
+	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=2").Scan(&gotWishlistId2, &gotName2)
+	if err != nil {
+		t.Errorf("Error querying database for unchanged item: %v", err)
+	}
+
+	assert(t, gotWishlistId2, 1, "Wrong wishlist_id")
+	assert(t, gotName2, "otherItemEdited", "Wrong item_name")
+
+	var gotWishlistId3 int
+	var gotName3 string
+	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=3").Scan(&gotWishlistId3, &gotName3)
+	if err != nil {
+		t.Errorf("Error querying database for unchanged item: %v", err)
+	}
+
+	assert(t, gotWishlistId3, 1, "Wrong wishlist_id")
+	assert(t, gotName3, "thirdItem", "Wrong item_name")
+}
+
+func TestEditItemMultipleIdentical(t *testing.T) {
+	db := genDataBase(t)
+	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"anItem\");")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"differentItem\");")
+
+	// cfg := config.New()
+	router := controller.BuildRouter(db)
+
+	req := createFormRequest("/wishlist/edit_item/2", map[string]string{"itemName": "anItem"})
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res := w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	assertRedirect(t, res, "/wishlist")
+
+	var found int
+	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
+	if err != nil {
+		t.Errorf("Error counting rows in database: %v", err)
+	}
+
+	assert(t, found, 2, "Wrong number of items in wishlist_items")
+
+	var gotWishlistId int
+	var gotName string
+	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+	if err != nil {
+		t.Errorf("Error querying database for changed item: %v", err)
+	}
+
+	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	assert(t, gotName, "anItem", "Wrong item_name")
+
+	var gotWishlistId2 int
+	var gotName2 string
+	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=2").Scan(&gotWishlistId2, &gotName2)
+	if err != nil {
+		t.Errorf("Error querying database for unchanged item: %v", err)
+	}
+
+	assert(t, gotWishlistId2, 1, "Wrong wishlist_id")
+	assert(t, gotName2, "anItem", "Wrong item_name")
 }
