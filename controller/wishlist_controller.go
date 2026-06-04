@@ -63,9 +63,13 @@ func (c *wishlistController) editItemSubmit(w http.ResponseWriter, r *http.Reque
 	name := r.FormValue("itemName")
 	editID := r.PathValue("id")
 
-	c.db.Exec("UPDATE wishlist_items SET item_name=? WHERE id=?", name, editID)
+	if name != "" {
+		c.db.Exec("UPDATE wishlist_items SET item_name=? WHERE id=?", name, editID)
 
-	http.Redirect(w, r, "/wishlist", http.StatusFound)
+		http.Redirect(w, r, "/wishlist", http.StatusFound)
+	} else {
+		http.Redirect(w, r, "/wishlist/edit_item/"+editID, http.StatusFound)
+	}
 }
 
 func (c *wishlistController) deleteItem(w http.ResponseWriter, r *http.Request) {
