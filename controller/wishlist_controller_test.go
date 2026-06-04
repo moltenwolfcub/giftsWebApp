@@ -702,3 +702,43 @@ func TestEditItemInvalidID(t *testing.T) {
 	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
 	assert(t, gotName, "initialItem", "Wrong item_name")
 }
+
+func TestEditItemNoBody(t *testing.T) {
+	db := genDataBase(t)
+	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
+
+	// cfg := config.New()
+	router := controller.BuildRouter(db)
+
+	req := httptest.NewRequest("POST", "/wishlist/edit_item/1", nil)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res := w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	assertRedirect(t, res, "/wishlist/edit_item/1")
+
+	var found int
+	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
+	if err != nil {
+		t.Errorf("Error counting rows in database: %v", err)
+	}
+
+	assert(t, found, 1, "Wrong number of items in wishlist_items")
+
+	var gotWishlistId int
+	var gotName string
+	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+	if err != nil {
+		t.Errorf("Error querying database for changed item: %v", err)
+	}
+
+	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	assert(t, gotName, "initialItem", "Wrong item_name")
+}
