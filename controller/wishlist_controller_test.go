@@ -303,42 +303,73 @@ func TestAddItemMultipleIdentical(t *testing.T) {
 }
 
 func TestEditItem(t *testing.T) {
-	db := genDataBase(t)
-	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
-	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
-
-	// cfg := config.New()
-	router := controller.BuildRouter(db)
-
-	req := createFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": "changed"})
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
-	res := w.Result()
-	t.Cleanup(func() {
-		res.Body.Close()
-	})
-
-	assertRedirect(t, res, "/wishlist")
-
-	var found int
-	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
-	if err != nil {
-		t.Errorf("Error counting rows in database: %v", err)
+	var tests = []struct {
+		testName   string
+		editedName string
+	}{
+		{
+			"Normal",
+			"TestItem",
+		},
+		{
+			"Space",
+			"Test Item",
+		},
+		{
+			"Numeric",
+			"3141592653589793",
+		},
+		{
+			"Unicode",
+			"!#$%& ̄f ̅ ̆ ̇ ̈ ̉ ̊ ̋ ̌ ̍ ̎ ̏ ̐ ̑ ̒ ̓ ̔ ̕ ζδψφΔΓΨΣΩ",
+		},
+		{
+			"SQL Injection",
+			"foo);DROP TABLE wishlist_items;",
+		},
 	}
 
-	assert(t, found, 1, "Wrong number of items in wishlist_items")
+	for _, testcase := range tests {
+		t.Run(testcase.testName, func(t *testing.T) {
 
-	var gotWishlistId int
-	var gotName string
-	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
-	if err != nil {
-		t.Errorf("Error querying database for inserted item: %v", err)
+			db := genDataBase(t)
+			db.Exec("INSERT INTO wishlists DEFAULT VALUES")
+			db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
+
+			// cfg := config.New()
+			router := controller.BuildRouter(db)
+
+			req := createFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": testcase.editedName})
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			res := w.Result()
+			t.Cleanup(func() {
+				res.Body.Close()
+			})
+
+			assertRedirect(t, res, "/wishlist")
+
+			var found int
+			err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
+			if err != nil {
+				t.Errorf("Error counting rows in database: %v", err)
+			}
+
+			assert(t, found, 1, "Wrong number of items in wishlist_items")
+
+			var gotWishlistId int
+			var gotName string
+			err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+			if err != nil {
+				t.Errorf("Error querying database for inserted item: %v", err)
+			}
+
+			assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+			assert(t, gotName, testcase.editedName, "Wrong item_name")
+		})
 	}
-
-	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
-	assert(t, gotName, "changed", "Wrong item_name")
 }
 
 func TestEditItemEmpty(t *testing.T) {
