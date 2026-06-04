@@ -49,6 +49,19 @@ func (c *wishlistController) editItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+
+	var found int
+	err = c.db.QueryRow("SELECT COUNT(*) FROM wishlist_items WHERE id=?", editID).Scan(&found)
+	if err != nil {
+		log.Print("Error counting items in wishlist_items:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if found != 1 {
+		http.Error(w, "Requested edit item doesn't exist", http.StatusNotFound)
+		return
+	}
+
 	item, err := models.LoadWishlistItem(c.db, editIDint)
 	if err != nil {
 		log.Print("Error loading wishlist item to edit:", err)
@@ -62,6 +75,18 @@ func (c *wishlistController) editItem(w http.ResponseWriter, r *http.Request) {
 func (c *wishlistController) editItemSubmit(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("itemName")
 	editID := r.PathValue("id")
+
+	var found int
+	err := c.db.QueryRow("SELECT COUNT(*) FROM wishlist_items WHERE id=?", editID).Scan(&found)
+	if err != nil {
+		log.Print("Error counting items in wishlist_items:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if found != 1 {
+		http.Error(w, "Requested edit item doesn't exist", http.StatusNotFound)
+		return
+	}
 
 	if name != "" {
 		c.db.Exec("UPDATE wishlist_items SET item_name=? WHERE id=?", name, editID)

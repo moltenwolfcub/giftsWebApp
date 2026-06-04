@@ -50,7 +50,6 @@ func assertRedirect(t *testing.T, res *http.Response, expected string) {
 	if res.Header["Location"][0] != expected {
 		t.Errorf("Redirected to wrong webpage. Expected: %s, Got %s", expected, res.Header["Location"][0])
 	}
-
 }
 
 func assert[K comparable](t *testing.T, got, want K, msg string) {
@@ -661,4 +660,45 @@ func TestEditItemMultipleIdentical(t *testing.T) {
 
 	assert(t, gotWishlistId2, 1, "Wrong wishlist_id")
 	assert(t, gotName2, "anItem", "Wrong item_name")
+}
+
+func TestEditItemInvalidID(t *testing.T) {
+	db := genDataBase(t)
+	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
+	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
+
+	// cfg := config.New()
+	router := controller.BuildRouter(db)
+
+	req := createFormRequest("/wishlist/edit_item/5", map[string]string{"itemName": "invalid"})
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res := w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	if res.StatusCode != http.StatusNotFound {
+		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusNotFound, res.StatusCode)
+	}
+
+	var found int
+	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items").Scan(&found)
+	if err != nil {
+		t.Errorf("Error counting rows in database: %v", err)
+	}
+
+	assert(t, found, 1, "Wrong number of items in wishlist_items")
+
+	var gotWishlistId int
+	var gotName string
+	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
+	if err != nil {
+		t.Errorf("Error querying database for changed item: %v", err)
+	}
+
+	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	assert(t, gotName, "initialItem", "Wrong item_name")
 }
