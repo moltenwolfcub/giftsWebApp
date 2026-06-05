@@ -1,48 +1,14 @@
 package controller_test
 
 import (
-	"database/sql"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"strings"
 	"testing"
 
 	"github.com/moltenwolfcub/giftsWebApp/config"
 	"github.com/moltenwolfcub/giftsWebApp/controller"
-	"github.com/moltenwolfcub/giftsWebApp/database"
 	"github.com/moltenwolfcub/giftsWebApp/testhelpers"
 )
-
-func genDataBase(t *testing.T) *sql.DB {
-	db, err := database.ConnectTestDB()
-	if err != nil {
-		t.Errorf("Error connectiong to database: %v", err)
-	}
-	err = database.MigrateDB(db)
-	if err != nil {
-		t.Errorf("Error migrating database: %v", err)
-	}
-
-	t.Cleanup(func() {
-		db.Close()
-	})
-
-	return db
-}
-
-func createFormRequest(target string, contents map[string]string) *http.Request {
-	form := url.Values{}
-	for k, v := range contents {
-		form.Set(k, v)
-	}
-
-	body := strings.NewReader(form.Encode())
-	req := httptest.NewRequest("POST", target, body)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	return req
-}
 
 func TestAddItem(t *testing.T) {
 	var tests = []struct {
@@ -74,12 +40,12 @@ func TestAddItem(t *testing.T) {
 	for _, testcase := range tests {
 		t.Run(testcase.testName, func(t *testing.T) {
 
-			db := genDataBase(t)
+			db := testhelpers.GenTestDatabase(t)
 			db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 
 			router := controller.BuildRouter(db, config.New())
 
-			req := createFormRequest("/wishlist/add_item", map[string]string{"itemName": testcase.itemName})
+			req := testhelpers.CreateFormRequest("/wishlist/add_item", map[string]string{"itemName": testcase.itemName})
 			w := httptest.NewRecorder()
 
 			router.ServeHTTP(w, req)
@@ -107,13 +73,13 @@ func TestAddItem(t *testing.T) {
 }
 
 func TestAddItemEmpty(t *testing.T) {
-	db := genDataBase(t)
+	db := testhelpers.GenTestDatabase(t)
 	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 
 	// cfg := config.New()
 	router := controller.BuildRouter(db, config.New())
 
-	req := createFormRequest("/wishlist/add_item", map[string]string{"itemName": ""})
+	req := testhelpers.CreateFormRequest("/wishlist/add_item", map[string]string{"itemName": ""})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -129,7 +95,7 @@ func TestAddItemEmpty(t *testing.T) {
 }
 
 func TestAddItemNoBody(t *testing.T) {
-	db := genDataBase(t)
+	db := testhelpers.GenTestDatabase(t)
 	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 
 	// cfg := config.New()
@@ -152,13 +118,13 @@ func TestAddItemNoBody(t *testing.T) {
 }
 
 func TestAddItemMultiple(t *testing.T) {
-	db := genDataBase(t)
+	db := testhelpers.GenTestDatabase(t)
 	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 
 	// cfg := config.New()
 	router := controller.BuildRouter(db, config.New())
 
-	req := createFormRequest("/wishlist/add_item", map[string]string{"itemName": "item_one"})
+	req := testhelpers.CreateFormRequest("/wishlist/add_item", map[string]string{"itemName": "item_one"})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -170,7 +136,7 @@ func TestAddItemMultiple(t *testing.T) {
 
 	testhelpers.AssertRedirect(t, res, "/wishlist")
 
-	req = createFormRequest("/wishlist/add_item", map[string]string{"itemName": "item_two"})
+	req = testhelpers.CreateFormRequest("/wishlist/add_item", map[string]string{"itemName": "item_two"})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -206,13 +172,13 @@ func TestAddItemMultiple(t *testing.T) {
 }
 
 func TestAddItemMultipleIdentical(t *testing.T) {
-	db := genDataBase(t)
+	db := testhelpers.GenTestDatabase(t)
 	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 
 	// cfg := config.New()
 	router := controller.BuildRouter(db, config.New())
 
-	req := createFormRequest("/wishlist/add_item", map[string]string{"itemName": "testItem"})
+	req := testhelpers.CreateFormRequest("/wishlist/add_item", map[string]string{"itemName": "testItem"})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -224,7 +190,7 @@ func TestAddItemMultipleIdentical(t *testing.T) {
 
 	testhelpers.AssertRedirect(t, res, "/wishlist")
 
-	req = createFormRequest("/wishlist/add_item", map[string]string{"itemName": "testItem"})
+	req = testhelpers.CreateFormRequest("/wishlist/add_item", map[string]string{"itemName": "testItem"})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -289,14 +255,14 @@ func TestEditItem(t *testing.T) {
 	for _, testcase := range tests {
 		t.Run(testcase.testName, func(t *testing.T) {
 
-			db := genDataBase(t)
+			db := testhelpers.GenTestDatabase(t)
 			db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 			db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
 
 			// cfg := config.New()
 			router := controller.BuildRouter(db, config.New())
 
-			req := createFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": testcase.editedName})
+			req := testhelpers.CreateFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": testcase.editedName})
 			w := httptest.NewRecorder()
 
 			router.ServeHTTP(w, req)
@@ -324,14 +290,14 @@ func TestEditItem(t *testing.T) {
 }
 
 func TestEditItemEmpty(t *testing.T) {
-	db := genDataBase(t)
+	db := testhelpers.GenTestDatabase(t)
 	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
 
 	// cfg := config.New()
 	router := controller.BuildRouter(db, config.New())
 
-	req := createFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": ""})
+	req := testhelpers.CreateFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": ""})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -357,7 +323,7 @@ func TestEditItemEmpty(t *testing.T) {
 }
 
 func TestEditSameItemTwice(t *testing.T) {
-	db := genDataBase(t)
+	db := testhelpers.GenTestDatabase(t)
 	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
 
@@ -365,7 +331,7 @@ func TestEditSameItemTwice(t *testing.T) {
 	router := controller.BuildRouter(db, config.New())
 
 	// FIRST CHANGE
-	req := createFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": "updatedVersion"})
+	req := testhelpers.CreateFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": "updatedVersion"})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -390,7 +356,7 @@ func TestEditSameItemTwice(t *testing.T) {
 	testhelpers.Assert(t, gotName, "updatedVersion", "Wrong item_name")
 
 	// SECOND CHANGE
-	req = createFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": "finalVersion"})
+	req = testhelpers.CreateFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": "finalVersion"})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -414,7 +380,7 @@ func TestEditSameItemTwice(t *testing.T) {
 }
 
 func TestEditItemWithOthers(t *testing.T) {
-	db := genDataBase(t)
+	db := testhelpers.GenTestDatabase(t)
 	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
 	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"secondaryItem\");")
@@ -423,7 +389,7 @@ func TestEditItemWithOthers(t *testing.T) {
 	// cfg := config.New()
 	router := controller.BuildRouter(db, config.New())
 
-	req := createFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": "editedItem"})
+	req := testhelpers.CreateFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": "editedItem"})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -469,7 +435,7 @@ func TestEditItemWithOthers(t *testing.T) {
 }
 
 func TestEditItemMultiple(t *testing.T) {
-	db := genDataBase(t)
+	db := testhelpers.GenTestDatabase(t)
 	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
 	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"secondaryItem\");")
@@ -478,7 +444,7 @@ func TestEditItemMultiple(t *testing.T) {
 	// cfg := config.New()
 	router := controller.BuildRouter(db, config.New())
 
-	req := createFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": "editedItem"})
+	req := testhelpers.CreateFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": "editedItem"})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -490,7 +456,7 @@ func TestEditItemMultiple(t *testing.T) {
 
 	testhelpers.AssertRedirect(t, res, "/wishlist")
 
-	req = createFormRequest("/wishlist/edit_item/2", map[string]string{"itemName": "otherItemEdited"})
+	req = testhelpers.CreateFormRequest("/wishlist/edit_item/2", map[string]string{"itemName": "otherItemEdited"})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -536,7 +502,7 @@ func TestEditItemMultiple(t *testing.T) {
 }
 
 func TestEditItemMultipleIdentical(t *testing.T) {
-	db := genDataBase(t)
+	db := testhelpers.GenTestDatabase(t)
 	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"anItem\");")
 	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"differentItem\");")
@@ -544,7 +510,7 @@ func TestEditItemMultipleIdentical(t *testing.T) {
 	// cfg := config.New()
 	router := controller.BuildRouter(db, config.New())
 
-	req := createFormRequest("/wishlist/edit_item/2", map[string]string{"itemName": "anItem"})
+	req := testhelpers.CreateFormRequest("/wishlist/edit_item/2", map[string]string{"itemName": "anItem"})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -580,14 +546,14 @@ func TestEditItemMultipleIdentical(t *testing.T) {
 }
 
 func TestEditItemInvalidID(t *testing.T) {
-	db := genDataBase(t)
+	db := testhelpers.GenTestDatabase(t)
 	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
 
 	// cfg := config.New()
 	router := controller.BuildRouter(db, config.New())
 
-	req := createFormRequest("/wishlist/edit_item/5", map[string]string{"itemName": "invalid"})
+	req := testhelpers.CreateFormRequest("/wishlist/edit_item/5", map[string]string{"itemName": "invalid"})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -615,7 +581,7 @@ func TestEditItemInvalidID(t *testing.T) {
 }
 
 func TestEditItemNoBody(t *testing.T) {
-	db := genDataBase(t)
+	db := testhelpers.GenTestDatabase(t)
 	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
 
@@ -649,14 +615,14 @@ func TestEditItemNoBody(t *testing.T) {
 }
 
 func TestDeleteItem(t *testing.T) {
-	db := genDataBase(t)
+	db := testhelpers.GenTestDatabase(t)
 	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
 
 	// cfg := config.New()
 	router := controller.BuildRouter(db, config.New())
 
-	req := createFormRequest("/wishlist/delete_item/1", nil)
+	req := testhelpers.CreateFormRequest("/wishlist/delete_item/1", nil)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -672,7 +638,7 @@ func TestDeleteItem(t *testing.T) {
 }
 
 func TestDeleteItemWithOthers(t *testing.T) {
-	db := genDataBase(t)
+	db := testhelpers.GenTestDatabase(t)
 	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
 	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"Important Item Don't Delete\");")
@@ -680,7 +646,7 @@ func TestDeleteItemWithOthers(t *testing.T) {
 	// cfg := config.New()
 	router := controller.BuildRouter(db, config.New())
 
-	req := createFormRequest("/wishlist/delete_item/1", nil)
+	req := testhelpers.CreateFormRequest("/wishlist/delete_item/1", nil)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -706,7 +672,7 @@ func TestDeleteItemWithOthers(t *testing.T) {
 }
 
 func TestDeleteItemMultiple(t *testing.T) {
-	db := genDataBase(t)
+	db := testhelpers.GenTestDatabase(t)
 	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
 	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"secondaryItem\");")
@@ -715,7 +681,7 @@ func TestDeleteItemMultiple(t *testing.T) {
 	// cfg := config.New()
 	router := controller.BuildRouter(db, config.New())
 
-	req := createFormRequest("/wishlist/delete_item/1", nil)
+	req := testhelpers.CreateFormRequest("/wishlist/delete_item/1", nil)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -727,7 +693,7 @@ func TestDeleteItemMultiple(t *testing.T) {
 
 	testhelpers.AssertRedirect(t, res, "/wishlist")
 
-	req = createFormRequest("/wishlist/delete_item/2", nil)
+	req = testhelpers.CreateFormRequest("/wishlist/delete_item/2", nil)
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -753,14 +719,14 @@ func TestDeleteItemMultiple(t *testing.T) {
 }
 
 func TestDeleteItemInvalidID(t *testing.T) {
-	db := genDataBase(t)
+	db := testhelpers.GenTestDatabase(t)
 	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
 
 	// cfg := config.New()
 	router := controller.BuildRouter(db, config.New())
 
-	req := createFormRequest("/wishlist/delete_item/5", nil)
+	req := testhelpers.CreateFormRequest("/wishlist/delete_item/5", nil)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -788,14 +754,14 @@ func TestDeleteItemInvalidID(t *testing.T) {
 }
 
 func TestDeleteItemDoubleDelete(t *testing.T) {
-	db := genDataBase(t)
+	db := testhelpers.GenTestDatabase(t)
 	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
 	db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, \"initialItem\");")
 
 	// cfg := config.New()
 	router := controller.BuildRouter(db, config.New())
 
-	req := createFormRequest("/wishlist/delete_item/1", nil)
+	req := testhelpers.CreateFormRequest("/wishlist/delete_item/1", nil)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -807,7 +773,7 @@ func TestDeleteItemDoubleDelete(t *testing.T) {
 
 	testhelpers.AssertRedirect(t, res, "/wishlist")
 
-	req = createFormRequest("/wishlist/delete_item/1", nil)
+	req = testhelpers.CreateFormRequest("/wishlist/delete_item/1", nil)
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
