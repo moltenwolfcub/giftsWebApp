@@ -2,7 +2,6 @@ package controller_test
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -12,6 +11,7 @@ import (
 	"github.com/moltenwolfcub/giftsWebApp/config"
 	"github.com/moltenwolfcub/giftsWebApp/controller"
 	"github.com/moltenwolfcub/giftsWebApp/database"
+	"github.com/moltenwolfcub/giftsWebApp/testhelpers"
 )
 
 func genDataBase(t *testing.T) *sql.DB {
@@ -42,33 +42,6 @@ func createFormRequest(target string, contents map[string]string) *http.Request 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	return req
-}
-
-func assertRedirect(t *testing.T, res *http.Response, expected string) {
-	if res.StatusCode != http.StatusFound { //TODO check all status codes used are correct
-		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusFound, res.StatusCode)
-	}
-
-	if res.Header["Location"][0] != expected {
-		t.Errorf("Redirected to wrong webpage. Expected: %s, Got %s", expected, res.Header["Location"][0])
-	}
-}
-
-func assertCount(t *testing.T, db *sql.DB, table string, expected int) {
-	var found int
-	err := db.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s", table)).Scan(&found)
-	if err != nil {
-		t.Errorf("Error counting rows in database: %v", err)
-	}
-
-	assert(t, found, expected, "Wrong number of items in "+table)
-}
-
-func assert[K comparable](t *testing.T, got, want K, msg string) {
-	if got != want {
-		t.Errorf("%s. Expected: %v, Got %v", msg, want, got)
-	}
-
 }
 
 func TestAddItem(t *testing.T) {
@@ -116,9 +89,9 @@ func TestAddItem(t *testing.T) {
 				res.Body.Close()
 			})
 
-			assertRedirect(t, res, "/wishlist")
+			testhelpers.AssertRedirect(t, res, "/wishlist")
 
-			assertCount(t, db, "wishlist_items", 1)
+			testhelpers.AssertCount(t, db, "wishlist_items", 1)
 
 			var gotWishlistId int
 			var gotName string
@@ -127,8 +100,8 @@ func TestAddItem(t *testing.T) {
 				t.Errorf("Error querying database for inserted item: %v", err)
 			}
 
-			assert(t, gotWishlistId, 1, "Wrong wishlist_id")
-			assert(t, gotName, testcase.itemName, "Wrong item_name")
+			testhelpers.Assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+			testhelpers.Assert(t, gotName, testcase.itemName, "Wrong item_name")
 		})
 	}
 }
@@ -150,9 +123,9 @@ func TestAddItemEmpty(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist/add_item")
+	testhelpers.AssertRedirect(t, res, "/wishlist/add_item")
 
-	assertCount(t, db, "wishlist_items", 0)
+	testhelpers.AssertCount(t, db, "wishlist_items", 0)
 }
 
 func TestAddItemNoBody(t *testing.T) {
@@ -173,9 +146,9 @@ func TestAddItemNoBody(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist/add_item")
+	testhelpers.AssertRedirect(t, res, "/wishlist/add_item")
 
-	assertCount(t, db, "wishlist_items", 0)
+	testhelpers.AssertCount(t, db, "wishlist_items", 0)
 }
 
 func TestAddItemMultiple(t *testing.T) {
@@ -195,7 +168,7 @@ func TestAddItemMultiple(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist")
+	testhelpers.AssertRedirect(t, res, "/wishlist")
 
 	req = createFormRequest("/wishlist/add_item", map[string]string{"itemName": "item_two"})
 	w = httptest.NewRecorder()
@@ -207,9 +180,9 @@ func TestAddItemMultiple(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist")
+	testhelpers.AssertRedirect(t, res, "/wishlist")
 
-	assertCount(t, db, "wishlist_items", 2)
+	testhelpers.AssertCount(t, db, "wishlist_items", 2)
 
 	var gotWishlistId1 int
 	var gotName1 string
@@ -218,8 +191,8 @@ func TestAddItemMultiple(t *testing.T) {
 		t.Errorf("Error querying database for inserted item: %v", err)
 	}
 
-	assert(t, gotWishlistId1, 1, "Wrong wishlist_id")
-	assert(t, gotName1, "item_one", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId1, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName1, "item_one", "Wrong item_name")
 
 	var gotWishlistId2 int
 	var gotName2 string
@@ -228,8 +201,8 @@ func TestAddItemMultiple(t *testing.T) {
 		t.Errorf("Error querying database for inserted item: %v", err)
 	}
 
-	assert(t, gotWishlistId2, 1, "Wrong wishlist_id")
-	assert(t, gotName2, "item_two", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId2, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName2, "item_two", "Wrong item_name")
 }
 
 func TestAddItemMultipleIdentical(t *testing.T) {
@@ -249,7 +222,7 @@ func TestAddItemMultipleIdentical(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist")
+	testhelpers.AssertRedirect(t, res, "/wishlist")
 
 	req = createFormRequest("/wishlist/add_item", map[string]string{"itemName": "testItem"})
 	w = httptest.NewRecorder()
@@ -261,9 +234,9 @@ func TestAddItemMultipleIdentical(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist")
+	testhelpers.AssertRedirect(t, res, "/wishlist")
 
-	assertCount(t, db, "wishlist_items", 2)
+	testhelpers.AssertCount(t, db, "wishlist_items", 2)
 
 	var gotWishlistId1 int
 	var gotName1 string
@@ -272,8 +245,8 @@ func TestAddItemMultipleIdentical(t *testing.T) {
 		t.Errorf("Error querying database for inserted item: %v", err)
 	}
 
-	assert(t, gotWishlistId1, 1, "Wrong wishlist_id")
-	assert(t, gotName1, "testItem", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId1, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName1, "testItem", "Wrong item_name")
 
 	var gotWishlistId2 int
 	var gotName2 string
@@ -282,8 +255,8 @@ func TestAddItemMultipleIdentical(t *testing.T) {
 		t.Errorf("Error querying database for inserted item: %v", err)
 	}
 
-	assert(t, gotWishlistId2, 1, "Wrong wishlist_id")
-	assert(t, gotName2, "testItem", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId2, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName2, "testItem", "Wrong item_name")
 }
 
 func TestEditItem(t *testing.T) {
@@ -333,9 +306,9 @@ func TestEditItem(t *testing.T) {
 				res.Body.Close()
 			})
 
-			assertRedirect(t, res, "/wishlist")
+			testhelpers.AssertRedirect(t, res, "/wishlist")
 
-			assertCount(t, db, "wishlist_items", 1)
+			testhelpers.AssertCount(t, db, "wishlist_items", 1)
 
 			var gotWishlistId int
 			var gotName string
@@ -344,8 +317,8 @@ func TestEditItem(t *testing.T) {
 				t.Errorf("Error querying database for changed item: %v", err)
 			}
 
-			assert(t, gotWishlistId, 1, "Wrong wishlist_id")
-			assert(t, gotName, testcase.editedName, "Wrong item_name")
+			testhelpers.Assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+			testhelpers.Assert(t, gotName, testcase.editedName, "Wrong item_name")
 		})
 	}
 }
@@ -368,9 +341,9 @@ func TestEditItemEmpty(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist/edit_item/1")
+	testhelpers.AssertRedirect(t, res, "/wishlist/edit_item/1")
 
-	assertCount(t, db, "wishlist_items", 1)
+	testhelpers.AssertCount(t, db, "wishlist_items", 1)
 
 	var gotWishlistId int
 	var gotName string
@@ -379,8 +352,8 @@ func TestEditItemEmpty(t *testing.T) {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
 
-	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
-	assert(t, gotName, "initialItem", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName, "initialItem", "Wrong item_name")
 }
 
 func TestEditSameItemTwice(t *testing.T) {
@@ -402,9 +375,9 @@ func TestEditSameItemTwice(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist")
+	testhelpers.AssertRedirect(t, res, "/wishlist")
 
-	assertCount(t, db, "wishlist_items", 1)
+	testhelpers.AssertCount(t, db, "wishlist_items", 1)
 
 	var gotWishlistId int
 	var gotName string
@@ -413,8 +386,8 @@ func TestEditSameItemTwice(t *testing.T) {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
 
-	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
-	assert(t, gotName, "updatedVersion", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName, "updatedVersion", "Wrong item_name")
 
 	// SECOND CHANGE
 	req = createFormRequest("/wishlist/edit_item/1", map[string]string{"itemName": "finalVersion"})
@@ -427,17 +400,17 @@ func TestEditSameItemTwice(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist")
+	testhelpers.AssertRedirect(t, res, "/wishlist")
 
-	assertCount(t, db, "wishlist_items", 1)
+	testhelpers.AssertCount(t, db, "wishlist_items", 1)
 
 	err = db.QueryRow("SELECT wishlist_id, item_name FROM wishlist_items WHERE id=1").Scan(&gotWishlistId, &gotName)
 	if err != nil {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
 
-	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
-	assert(t, gotName, "finalVersion", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName, "finalVersion", "Wrong item_name")
 }
 
 func TestEditItemWithOthers(t *testing.T) {
@@ -460,9 +433,9 @@ func TestEditItemWithOthers(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist")
+	testhelpers.AssertRedirect(t, res, "/wishlist")
 
-	assertCount(t, db, "wishlist_items", 3)
+	testhelpers.AssertCount(t, db, "wishlist_items", 3)
 
 	var gotWishlistId int
 	var gotName string
@@ -471,8 +444,8 @@ func TestEditItemWithOthers(t *testing.T) {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
 
-	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
-	assert(t, gotName, "editedItem", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName, "editedItem", "Wrong item_name")
 
 	var gotWishlistId2 int
 	var gotName2 string
@@ -481,8 +454,8 @@ func TestEditItemWithOthers(t *testing.T) {
 		t.Errorf("Error querying database for unchanged item: %v", err)
 	}
 
-	assert(t, gotWishlistId2, 1, "Wrong wishlist_id")
-	assert(t, gotName2, "secondaryItem", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId2, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName2, "secondaryItem", "Wrong item_name")
 
 	var gotWishlistId3 int
 	var gotName3 string
@@ -491,8 +464,8 @@ func TestEditItemWithOthers(t *testing.T) {
 		t.Errorf("Error querying database for unchanged item: %v", err)
 	}
 
-	assert(t, gotWishlistId3, 1, "Wrong wishlist_id")
-	assert(t, gotName3, "thirdItem", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId3, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName3, "thirdItem", "Wrong item_name")
 }
 
 func TestEditItemMultiple(t *testing.T) {
@@ -515,7 +488,7 @@ func TestEditItemMultiple(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist")
+	testhelpers.AssertRedirect(t, res, "/wishlist")
 
 	req = createFormRequest("/wishlist/edit_item/2", map[string]string{"itemName": "otherItemEdited"})
 	w = httptest.NewRecorder()
@@ -527,9 +500,9 @@ func TestEditItemMultiple(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist")
+	testhelpers.AssertRedirect(t, res, "/wishlist")
 
-	assertCount(t, db, "wishlist_items", 3)
+	testhelpers.AssertCount(t, db, "wishlist_items", 3)
 
 	var gotWishlistId int
 	var gotName string
@@ -538,8 +511,8 @@ func TestEditItemMultiple(t *testing.T) {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
 
-	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
-	assert(t, gotName, "editedItem", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName, "editedItem", "Wrong item_name")
 
 	var gotWishlistId2 int
 	var gotName2 string
@@ -548,8 +521,8 @@ func TestEditItemMultiple(t *testing.T) {
 		t.Errorf("Error querying database for unchanged item: %v", err)
 	}
 
-	assert(t, gotWishlistId2, 1, "Wrong wishlist_id")
-	assert(t, gotName2, "otherItemEdited", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId2, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName2, "otherItemEdited", "Wrong item_name")
 
 	var gotWishlistId3 int
 	var gotName3 string
@@ -558,8 +531,8 @@ func TestEditItemMultiple(t *testing.T) {
 		t.Errorf("Error querying database for unchanged item: %v", err)
 	}
 
-	assert(t, gotWishlistId3, 1, "Wrong wishlist_id")
-	assert(t, gotName3, "thirdItem", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId3, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName3, "thirdItem", "Wrong item_name")
 }
 
 func TestEditItemMultipleIdentical(t *testing.T) {
@@ -581,9 +554,9 @@ func TestEditItemMultipleIdentical(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist")
+	testhelpers.AssertRedirect(t, res, "/wishlist")
 
-	assertCount(t, db, "wishlist_items", 2)
+	testhelpers.AssertCount(t, db, "wishlist_items", 2)
 
 	var gotWishlistId int
 	var gotName string
@@ -592,8 +565,8 @@ func TestEditItemMultipleIdentical(t *testing.T) {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
 
-	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
-	assert(t, gotName, "anItem", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName, "anItem", "Wrong item_name")
 
 	var gotWishlistId2 int
 	var gotName2 string
@@ -602,8 +575,8 @@ func TestEditItemMultipleIdentical(t *testing.T) {
 		t.Errorf("Error querying database for unchanged item: %v", err)
 	}
 
-	assert(t, gotWishlistId2, 1, "Wrong wishlist_id")
-	assert(t, gotName2, "anItem", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId2, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName2, "anItem", "Wrong item_name")
 }
 
 func TestEditItemInvalidID(t *testing.T) {
@@ -628,7 +601,7 @@ func TestEditItemInvalidID(t *testing.T) {
 		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusNotFound, res.StatusCode)
 	}
 
-	assertCount(t, db, "wishlist_items", 1)
+	testhelpers.AssertCount(t, db, "wishlist_items", 1)
 
 	var gotWishlistId int
 	var gotName string
@@ -637,8 +610,8 @@ func TestEditItemInvalidID(t *testing.T) {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
 
-	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
-	assert(t, gotName, "initialItem", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName, "initialItem", "Wrong item_name")
 }
 
 func TestEditItemNoBody(t *testing.T) {
@@ -660,9 +633,9 @@ func TestEditItemNoBody(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist/edit_item/1")
+	testhelpers.AssertRedirect(t, res, "/wishlist/edit_item/1")
 
-	assertCount(t, db, "wishlist_items", 1)
+	testhelpers.AssertCount(t, db, "wishlist_items", 1)
 
 	var gotWishlistId int
 	var gotName string
@@ -671,8 +644,8 @@ func TestEditItemNoBody(t *testing.T) {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
 
-	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
-	assert(t, gotName, "initialItem", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName, "initialItem", "Wrong item_name")
 }
 
 func TestDeleteItem(t *testing.T) {
@@ -693,9 +666,9 @@ func TestDeleteItem(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist")
+	testhelpers.AssertRedirect(t, res, "/wishlist")
 
-	assertCount(t, db, "wishlist_items", 0)
+	testhelpers.AssertCount(t, db, "wishlist_items", 0)
 }
 
 func TestDeleteItemWithOthers(t *testing.T) {
@@ -717,9 +690,9 @@ func TestDeleteItemWithOthers(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist")
+	testhelpers.AssertRedirect(t, res, "/wishlist")
 
-	assertCount(t, db, "wishlist_items", 1)
+	testhelpers.AssertCount(t, db, "wishlist_items", 1)
 
 	var gotWishlistId int
 	var gotName string
@@ -728,8 +701,8 @@ func TestDeleteItemWithOthers(t *testing.T) {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
 
-	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
-	assert(t, gotName, "Important Item Don't Delete", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName, "Important Item Don't Delete", "Wrong item_name")
 }
 
 func TestDeleteItemMultiple(t *testing.T) {
@@ -752,7 +725,7 @@ func TestDeleteItemMultiple(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist")
+	testhelpers.AssertRedirect(t, res, "/wishlist")
 
 	req = createFormRequest("/wishlist/delete_item/2", nil)
 	w = httptest.NewRecorder()
@@ -764,9 +737,9 @@ func TestDeleteItemMultiple(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist")
+	testhelpers.AssertRedirect(t, res, "/wishlist")
 
-	assertCount(t, db, "wishlist_items", 1)
+	testhelpers.AssertCount(t, db, "wishlist_items", 1)
 
 	var gotWishlistId int
 	var gotName string
@@ -775,8 +748,8 @@ func TestDeleteItemMultiple(t *testing.T) {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
 
-	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
-	assert(t, gotName, "Important Item Don't Delete", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName, "Important Item Don't Delete", "Wrong item_name")
 }
 
 func TestDeleteItemInvalidID(t *testing.T) {
@@ -801,7 +774,7 @@ func TestDeleteItemInvalidID(t *testing.T) {
 		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusNotFound, res.StatusCode)
 	}
 
-	assertCount(t, db, "wishlist_items", 1)
+	testhelpers.AssertCount(t, db, "wishlist_items", 1)
 
 	var gotWishlistId int
 	var gotName string
@@ -810,8 +783,8 @@ func TestDeleteItemInvalidID(t *testing.T) {
 		t.Errorf("Error querying database for changed item: %v", err)
 	}
 
-	assert(t, gotWishlistId, 1, "Wrong wishlist_id")
-	assert(t, gotName, "initialItem", "Wrong item_name")
+	testhelpers.Assert(t, gotWishlistId, 1, "Wrong wishlist_id")
+	testhelpers.Assert(t, gotName, "initialItem", "Wrong item_name")
 }
 
 func TestDeleteItemDoubleDelete(t *testing.T) {
@@ -832,7 +805,7 @@ func TestDeleteItemDoubleDelete(t *testing.T) {
 		res.Body.Close()
 	})
 
-	assertRedirect(t, res, "/wishlist")
+	testhelpers.AssertRedirect(t, res, "/wishlist")
 
 	req = createFormRequest("/wishlist/delete_item/1", nil)
 	w = httptest.NewRecorder()
@@ -848,5 +821,5 @@ func TestDeleteItemDoubleDelete(t *testing.T) {
 		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusNotFound, res.StatusCode)
 	}
 
-	assertCount(t, db, "wishlist_items", 0)
+	testhelpers.AssertCount(t, db, "wishlist_items", 0)
 }
