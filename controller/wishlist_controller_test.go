@@ -106,7 +106,7 @@ func TestAddItem(t *testing.T) {
 
 			router := controller.BuildRouter(db, config.New())
 
-			req := createFormRequest("/wishlist/add_item", map[string]string{"itemName": testcase.testName})
+			req := createFormRequest("/wishlist/add_item", map[string]string{"itemName": testcase.itemName})
 			w := httptest.NewRecorder()
 
 			router.ServeHTTP(w, req)
@@ -128,7 +128,7 @@ func TestAddItem(t *testing.T) {
 			}
 
 			assert(t, gotWishlistId, 1, "Wrong wishlist_id")
-			assert(t, gotName, testcase.testName, "Wrong item_name")
+			assert(t, gotName, testcase.itemName, "Wrong item_name")
 		})
 	}
 }
