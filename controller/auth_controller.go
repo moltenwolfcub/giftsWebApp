@@ -27,6 +27,12 @@ func (c *authController) register(w http.ResponseWriter, r *http.Request) {
 
 func (c *authController) registerSubmit(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
+
+	if len(username) == 0 {
+		http.Redirect(w, r, "/auth/register", http.StatusFound)
+		return
+	}
+
 	userTaken, err := models.UsernameExists(c.db, username)
 	if err != nil {
 		log.Printf("Error checking for duplicate username on register: %v", err)
@@ -43,6 +49,11 @@ func (c *authController) registerSubmit(w http.ResponseWriter, r *http.Request) 
 
 	password := r.FormValue("password")
 	confirmPassword := r.FormValue("confirm-password")
+
+	if len(password) == 0 {
+		http.Redirect(w, r, "/auth/register", http.StatusFound)
+		return
+	}
 
 	if password != confirmPassword {
 		// TODO: add already submitted form data along with
