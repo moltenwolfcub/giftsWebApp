@@ -22,7 +22,7 @@ func NewAppServer(db *sql.DB, cfg *config.Config) *AppServer {
 	}
 }
 
-func (a *AppServer) Run() {
+func (a *AppServer) Run() error {
 	log.Printf("Starting server on :%d\n", a.cfg.Port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", a.cfg.Port), a.router))
+	return http.ListenAndServe(fmt.Sprintf(":%d", a.cfg.Port), a.router)
 }

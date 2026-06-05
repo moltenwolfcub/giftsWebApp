@@ -33,14 +33,20 @@ func (c *wishlistController) addItem(w http.ResponseWriter, r *http.Request) {
 func (c *wishlistController) addItemSubmit(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("itemName")
 
-	_, err := c.db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, ?);", name)
-	if err != nil {
-		log.Printf("Error adding wishlist item to database: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	if name != "" {
+		_, err := c.db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, ?);", name)
+
+		if err != nil {
+			log.Printf("Error adding wishlist item to database: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/wishlist", http.StatusFound)
+	} else {
+		http.Redirect(w, r, "/wishlist/add_item", http.StatusFound)
 	}
 
-	http.Redirect(w, r, "/wishlist", http.StatusFound)
 }
 
 func (c *wishlistController) editItem(w http.ResponseWriter, r *http.Request) {
@@ -51,6 +57,19 @@ func (c *wishlistController) editItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+
+	var found int
+	err = c.db.QueryRow("SELECT COUNT(*) FROM wishlist_items WHERE id=?", editID).Scan(&found)
+	if err != nil {
+		log.Print("Error counting items in wishlist_items:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if found != 1 {
+		http.Error(w, "Requested edit item doesn't exist", http.StatusNotFound)
+		return
+	}
+
 	item, err := models.LoadWishlistItem(c.db, editIDint)
 	if err != nil {
 		log.Print("Error loading wishlist item to edit:", err)
@@ -65,20 +84,48 @@ func (c *wishlistController) editItemSubmit(w http.ResponseWriter, r *http.Reque
 	name := r.FormValue("itemName")
 	editID := r.PathValue("id")
 
-	_, err := c.db.Exec("UPDATE wishlist_items SET item_name=? WHERE id=?", name, editID)
+	var found int
+	err := c.db.QueryRow("SELECT COUNT(*) FROM wishlist_items WHERE id=?", editID).Scan(&found)
 	if err != nil {
-		log.Printf("Error editing wishlist item in database: %v", err)
+		log.Print("Error counting items in wishlist_items:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	if found != 1 {
+		http.Error(w, "Requested edit item doesn't exist", http.StatusNotFound)
+		return
+	}
 
-	http.Redirect(w, r, "/wishlist", http.StatusFound)
+	if name != "" {
+		_, err := c.db.Exec("UPDATE wishlist_items SET item_name=? WHERE id=?", name, editID)
+		if err != nil {
+			log.Printf("Error editing wishlist item in database: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/wishlist", http.StatusFound)
+	} else {
+		http.Redirect(w, r, "/wishlist/edit_item/"+editID, http.StatusFound)
+	}
 }
 
 func (c *wishlistController) deleteItem(w http.ResponseWriter, r *http.Request) {
 	deleteID := r.PathValue("id")
 
-	_, err := c.db.Exec("DELETE FROM wishlist_items WHERE id=?", deleteID)
+	var found int
+	err := c.db.QueryRow("SELECT COUNT(*) FROM wishlist_items WHERE id=?", deleteID).Scan(&found)
+	if err != nil {
+		log.Print("Error counting items in wishlist_items:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if found != 1 {
+		http.Error(w, "Tried to delete an item that doesn't exist", http.StatusNotFound)
+		return
+	}
+
+	_, err = c.db.Exec("DELETE FROM wishlist_items WHERE id=?", deleteID)
 	if err != nil {
 		log.Printf("Error eleting wishlist item from database: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
