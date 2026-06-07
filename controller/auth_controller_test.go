@@ -377,3 +377,94 @@ func TestRegisterNoBody(t *testing.T) {
 
 	testhelpers.AssertCount(t, db, "users", 0)
 }
+
+func TestLogin(t *testing.T) {
+	db := testhelpers.GenTestDatabase(t)
+	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
+
+	cfg := config.New()
+	router := controller.BuildRouter(db, cfg)
+
+	//create user
+	req := testhelpers.CreateFormRequest("/auth/register", map[string]string{
+		"username":         "user1",
+		"password":         "password",
+		"confirm-password": "password",
+	})
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	//test user
+	req = testhelpers.CreateFormRequest("/auth/login", map[string]string{
+		"username": "user1",
+		"password": "password",
+	})
+	w = httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res := w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	testhelpers.AssertRedirect(t, res, "/")
+	// when login is more complex check cookie that user is in fact authenticated
+}
+
+func TestLoginWrongPassword(t *testing.T) {
+	db := testhelpers.GenTestDatabase(t)
+	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
+
+	cfg := config.New()
+	router := controller.BuildRouter(db, cfg)
+
+	//create user
+	req := testhelpers.CreateFormRequest("/auth/register", map[string]string{
+		"username":         "user1",
+		"password":         "password",
+		"confirm-password": "password",
+	})
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	//test user
+	req = testhelpers.CreateFormRequest("/auth/login", map[string]string{
+		"username": "user1",
+		"password": "wrongPassword",
+	})
+	w = httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res := w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	testhelpers.AssertRedirect(t, res, "/auth/login")
+}
+
+func TestLoginInvalidUser(t *testing.T) {
+	db := testhelpers.GenTestDatabase(t)
+	db.Exec("INSERT INTO wishlists DEFAULT VALUES")
+
+	cfg := config.New()
+	router := controller.BuildRouter(db, cfg)
+
+	//test user
+	req := testhelpers.CreateFormRequest("/auth/login", map[string]string{
+		"username": "doesntExist",
+		"password": "pass",
+	})
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	res := w.Result()
+	t.Cleanup(func() {
+		res.Body.Close()
+	})
+
+	testhelpers.AssertRedirect(t, res, "/auth/login")
+}
