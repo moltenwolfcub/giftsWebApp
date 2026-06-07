@@ -34,8 +34,8 @@ func TestRegister(t *testing.T) {
 		},
 		{
 			"SQL Injection",
-			"foo);DROP TABLE wishlist_items;",
-			"foo);DROP TABLE wishlist_items;",
+			"foo);DROP TABLE users;",
+			"foo);DROP TABLE users;",
 		},
 	}
 
