@@ -5,11 +5,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 type WishlistItem struct {
 	Id   int
 	Name string
+}
+
+func LoadWishlistItemStringID(db *sql.DB, id string) (*WishlistItem, error, int) {
+	intId, err := strconv.Atoi(id)
+	if err != nil {
+		log.Print("Non-integer id given to editItem handler:", err)
+		return nil, err, http.StatusNotFound
+	}
+	return LoadWishlistItem(db, intId)
 }
 
 func LoadWishlistItem(db *sql.DB, id int) (*WishlistItem, error, int) {

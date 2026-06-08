@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/moltenwolfcub/giftsWebApp/models"
 )
@@ -51,14 +50,8 @@ func (c *wishlistController) addItemSubmit(w http.ResponseWriter, r *http.Reques
 
 func (c *wishlistController) editItem(w http.ResponseWriter, r *http.Request) {
 	editID := r.PathValue("id")
-	editIDint, err := strconv.Atoi(editID)
-	if err != nil {
-		log.Print("Non-integer id given to editItem handler:", err)
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
 
-	item, err, code := models.LoadWishlistItem(c.db, editIDint)
+	item, err, code := models.LoadWishlistItemStringID(c.db, editID)
 	if err != nil {
 		log.Print("Error loading wishlist item to edit:", err)
 		http.Error(w, err.Error(), code)
@@ -72,14 +65,7 @@ func (c *wishlistController) editItemSubmit(w http.ResponseWriter, r *http.Reque
 	name := r.FormValue("itemName")
 	editID := r.PathValue("id")
 
-	editIDint, err := strconv.Atoi(editID) //probably should inline this
-	if err != nil {
-		log.Print("Non-integer id given to editItem handler:", err)
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
-	item, err, code := models.LoadWishlistItem(c.db, editIDint)
+	item, err, code := models.LoadWishlistItemStringID(c.db, editID)
 	if err != nil {
 		log.Print("Error loading wishlist item to edit:", err)
 		http.Error(w, err.Error(), code)
