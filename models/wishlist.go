@@ -50,6 +50,14 @@ func LoadWishlistItem(db *sql.DB, id int) (*WishlistItem, error, int) {
 	return &item, nil, http.StatusOK
 }
 
+func (w WishlistItem) Save(db *sql.DB) error {
+	_, err := db.Exec("UPDATE wishlist_items SET item_name=? WHERE id=?", w.Name, w.Id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 type Wishlist struct {
 	Items []WishlistItem
 }

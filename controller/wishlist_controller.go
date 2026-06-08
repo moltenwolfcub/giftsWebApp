@@ -71,10 +71,10 @@ func (c *wishlistController) editItemSubmit(w http.ResponseWriter, r *http.Reque
 		http.Error(w, err.Error(), code)
 		return
 	}
-	item = item
 
 	if name != "" {
-		_, err := c.db.Exec("UPDATE wishlist_items SET item_name=? WHERE id=?", name, editID)
+		item.Name = name
+		err := item.Save(c.db)
 		if err != nil {
 			log.Printf("Error editing wishlist item in database: %v", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
