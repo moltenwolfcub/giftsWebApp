@@ -33,10 +33,16 @@ func (c *wishlistController) addItemSubmit(w http.ResponseWriter, r *http.Reques
 	name := r.FormValue("itemName")
 
 	if name != "" {
-		_, err := c.db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (1, ?);", name)
-
+		item, err := models.CreateWishlistItem(c.db, name, 1)
 		if err != nil {
 			log.Printf("Error adding wishlist item to database: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = item.Save(c.db)
+		if err != nil {
+			log.Printf("Error saving wishlist item in database: %v", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -45,7 +51,6 @@ func (c *wishlistController) addItemSubmit(w http.ResponseWriter, r *http.Reques
 	} else {
 		http.Redirect(w, r, "/wishlist/add_item", http.StatusFound)
 	}
-
 }
 
 func (c *wishlistController) editItem(w http.ResponseWriter, r *http.Request) {

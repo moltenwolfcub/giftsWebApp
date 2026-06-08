@@ -9,9 +9,33 @@ import (
 )
 
 type WishlistItem struct {
+	Id   int
+	Name string
+
+	wishlistId int
+
 	alive bool
-	Id    int
-	Name  string
+}
+
+func CreateWishlistItem(db *sql.DB, name string, wishlistId int) (*WishlistItem, error) {
+	res, err := db.Exec("INSERT INTO wishlist_items (wishlist_id, item_name) VALUES (0, \"__empty\");")
+	if err != nil {
+		return nil, err
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+
+	item := &WishlistItem{
+		Id:   int(id),
+		Name: name,
+
+		wishlistId: wishlistId,
+		alive:      true,
+	}
+	return item, nil
 }
 
 func LoadWishlistItemStringID(db *sql.DB, id string) (*WishlistItem, error, int) {
@@ -38,16 +62,18 @@ func LoadWishlistItem(db *sql.DB, id int) (*WishlistItem, error, int) {
 	}
 
 	var name string
-	err = db.QueryRow("SELECT item_name FROM wishlist_items WHERE id=?", id).Scan(&name)
+	var wishlistId int
+	err = db.QueryRow("SELECT item_name, wishlist_id FROM wishlist_items WHERE id=?", id).Scan(&name, &wishlistId)
 	if err != nil {
 		log.Printf("Error finding wishlist item[%d]: %v", id, err)
 		return nil, err, http.StatusInternalServerError
 	}
 
 	item := WishlistItem{
-		alive: true,
-		Id:    id,
-		Name:  name,
+		alive:      true,
+		Id:         id,
+		Name:       name,
+		wishlistId: wishlistId,
 	}
 	return &item, nil, http.StatusOK
 }
@@ -57,7 +83,7 @@ func (w *WishlistItem) Save(db *sql.DB) error {
 		return fmt.Errorf("Tried to save an item that isn't alive")
 	}
 
-	_, err := db.Exec("UPDATE wishlist_items SET item_name=? WHERE id=?", w.Name, w.Id)
+	_, err := db.Exec("UPDATE wishlist_items SET item_name=?,wishlist_id=? WHERE id=?", w.Name, w.wishlistId, w.Id)
 	if err != nil {
 		return err
 	}
@@ -103,7 +129,12 @@ func LoadWishlist(db *sql.DB) (*Wishlist, error) {
 		var name string
 		var id int
 		items.Scan(&id, &name)
-		wl.Items = append(wl.Items, WishlistItem{alive: true, Id: id, Name: name})
+		wl.Items = append(wl.Items, WishlistItem{
+			alive:      true,
+			Id:         id,
+			Name:       name,
+			wishlistId: 1, //TODO when implementing multiple wishlists change this
+		})
 	}
 
 	return &wl, nil
