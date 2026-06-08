@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 )
 
 type WishlistItem struct {
@@ -11,32 +12,32 @@ type WishlistItem struct {
 	Name string
 }
 
-func LoadWishlistItem(db *sql.DB, id int) (*WishlistItem, error) {
+func LoadWishlistItem(db *sql.DB, id int) (*WishlistItem, error, int) {
 	var found int
 	err := db.QueryRow("SELECT COUNT(*) FROM wishlist_items WHERE id=?", id).Scan(&found)
 	if err != nil {
 		log.Print("Error counting items in wishlist_items:", err)
-		return nil, err
+		return nil, err, http.StatusInternalServerError
 	}
 	if found == 0 {
-		return nil, fmt.Errorf("Requested wishlist item [%d] doesn't exist.", id)
+		return nil, fmt.Errorf("Requested wishlist item [%d] doesn't exist.", id), http.StatusNotFound
 	}
 	if found > 1 {
-		return nil, fmt.Errorf("Multiple database entries containing wishlist item [%d]", id)
+		return nil, fmt.Errorf("Multiple database entries containing wishlist item [%d]", id), http.StatusNotFound
 	}
 
 	var name string
 	err = db.QueryRow("SELECT item_name FROM wishlist_items WHERE id=?", id).Scan(&name)
 	if err != nil {
 		log.Printf("Error finding wishlist item[%d]: %v", id, err)
-		return nil, err
+		return nil, err, http.StatusInternalServerError
 	}
 
 	item := WishlistItem{
 		Id:   id,
 		Name: name,
 	}
-	return &item, nil
+	return &item, nil, http.StatusOK
 }
 
 type Wishlist struct {
