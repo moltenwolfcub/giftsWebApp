@@ -8,6 +8,7 @@ import (
 )
 
 func AssertRedirect(t *testing.T, res *http.Response, expected string) {
+	t.Helper()
 	if res.StatusCode != http.StatusFound { //TODO check all status codes used are correct
 		t.Errorf("Wrong http status code. Expected: %d, Got: %d", http.StatusFound, res.StatusCode)
 	}
@@ -18,6 +19,7 @@ func AssertRedirect(t *testing.T, res *http.Response, expected string) {
 }
 
 func AssertCount(t *testing.T, db *sql.DB, table string, expected int) {
+	t.Helper()
 	var found int
 	err := db.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s", table)).Scan(&found)
 	if err != nil {
@@ -28,6 +30,7 @@ func AssertCount(t *testing.T, db *sql.DB, table string, expected int) {
 }
 
 func Assert[K comparable](t *testing.T, got, want K, msg string) {
+	t.Helper()
 	if got != want {
 		t.Errorf("%s. Expected: %v, Got %v", msg, want, got)
 	}
