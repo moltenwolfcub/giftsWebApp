@@ -14,7 +14,7 @@ type WishlistItem struct {
 
 	wishlistId int
 
-	alive bool
+	stale bool
 }
 
 func CreateWishlistItem(db *sql.DB, name string, wishlistId int) (*WishlistItem, error) {
@@ -33,7 +33,6 @@ func CreateWishlistItem(db *sql.DB, name string, wishlistId int) (*WishlistItem,
 		Name: name,
 
 		wishlistId: wishlistId,
-		alive:      true,
 	}
 	return item, nil
 }
@@ -70,7 +69,6 @@ func LoadWishlistItem(db *sql.DB, id int) (*WishlistItem, error, int) {
 	}
 
 	item := WishlistItem{
-		alive:      true,
 		Id:         id,
 		Name:       name,
 		wishlistId: wishlistId,
@@ -79,7 +77,7 @@ func LoadWishlistItem(db *sql.DB, id int) (*WishlistItem, error, int) {
 }
 
 func (w *WishlistItem) Save(db *sql.DB) error {
-	if !w.alive {
+	if w.stale {
 		return fmt.Errorf("Tried to save an item that isn't alive")
 	}
 
@@ -91,11 +89,11 @@ func (w *WishlistItem) Save(db *sql.DB) error {
 }
 
 func (w *WishlistItem) Delete(db *sql.DB) error {
-	if !w.alive {
+	if w.stale {
 		return fmt.Errorf("Tried to delete an item that already isn't alive")
 	}
 
-	w.alive = false
+	w.stale = true
 	_, err := db.Exec("DELETE FROM wishlist_items WHERE id=?", w.Id)
 	if err != nil {
 		return err
@@ -130,7 +128,6 @@ func LoadWishlist(db *sql.DB) (*Wishlist, error) {
 		var id int
 		items.Scan(&id, &name)
 		wl.Items = append(wl.Items, WishlistItem{
-			alive:      true,
 			Id:         id,
 			Name:       name,
 			wishlistId: 1, //TODO when implementing multiple wishlists change this
