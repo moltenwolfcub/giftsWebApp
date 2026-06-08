@@ -90,21 +90,16 @@ func (c *wishlistController) editItemSubmit(w http.ResponseWriter, r *http.Reque
 func (c *wishlistController) deleteItem(w http.ResponseWriter, r *http.Request) {
 	deleteID := r.PathValue("id")
 
-	var found int
-	err := c.db.QueryRow("SELECT COUNT(*) FROM wishlist_items WHERE id=?", deleteID).Scan(&found)
+	item, err, code := models.LoadWishlistItemStringID(c.db, deleteID)
 	if err != nil {
-		log.Print("Error counting items in wishlist_items:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if found != 1 {
-		http.Error(w, "Tried to delete an item that doesn't exist", http.StatusNotFound)
+		log.Print("Error loading wishlist item to delete:", err)
+		http.Error(w, err.Error(), code)
 		return
 	}
 
-	_, err = c.db.Exec("DELETE FROM wishlist_items WHERE id=?", deleteID)
+	err = item.Delete(c.db)
 	if err != nil {
-		log.Printf("Error eleting wishlist item from database: %v", err)
+		log.Printf("Error deleting wishlist item from database: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
